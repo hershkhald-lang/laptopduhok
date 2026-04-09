@@ -199,10 +199,13 @@
             <div class="auth-logo"><i class="fas fa-crown"></i></div>
             <h1 class="title">لوحة المدير</h1>
             <div class="sub">عرض 4 مؤشرات فقط من الكاشير</div>
-            <input id="email" type="email" placeholder="admin@example.com" autocomplete="username">
-            <input id="password" type="password" placeholder="كلمة المرور" autocomplete="current-password">
-            <button id="loginBtn" class="btn-primary"><i class="fas fa-right-to-bracket"></i> دخول</button>
+            <form id="authForm" action="#" method="post" novalidate>
+                <input id="email" type="email" placeholder="admin@example.com" autocomplete="username" inputmode="email" enterkeyhint="next">
+                <input id="password" type="password" placeholder="كلمة المرور" autocomplete="current-password" enterkeyhint="done">
+                <button type="submit" id="loginBtn" class="btn-primary"><i class="fas fa-right-to-bracket"></i> دخول</button>
+            </form>
             <div id="authMsg"></div>
+            <p class="sub" style="margin-top:14px; font-size:0.78rem; line-height:1.5;">إذا ظهر خطأ بعد الرفع على GitHub: أضف نطاق الصفحة في Firebase → Authentication → Settings → Authorized domains (مثل <code style="color:#93c5fd;">username.github.io</code>).</p>
         </div>
 
         <div id="dashboard" class="hidden">
@@ -256,13 +259,30 @@
         </div>
     </div>
 
-    <script src="js/firebase_config.js"></script>
+    <!-- إعداد Firebase مدمج هنا حتى تعمل الصفحة من ملف واحد على GitHub Pages دون الاعتماد على js/firebase_config.js -->
+    <script>
+        window.POS_FIREBASE_CONFIG = window.POS_FIREBASE_CONFIG || {
+            apiKey: "AIzaSyBsvR9uOFOTJtR_m1bRyakoBPKc5ckfBRo",
+            authDomain: "laptopduhokpos.firebaseapp.com",
+            databaseURL: "https://laptopduhokpos-default-rtdb.firebaseio.com",
+            projectId: "laptopduhokpos",
+            storageBucket: "laptopduhokpos.firebasestorage.app",
+            messagingSenderId: "189692641233",
+            appId: "1:189692641233:web:02f5382d55ddd6cc50aaf0",
+            measurementId: "G-H2WDDPXK7N"
+        };
+    </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
         const firebaseConfig = window.POS_FIREBASE_CONFIG || {};
+        if (!firebaseConfig.apiKey) {
+            const m = document.getElementById("authMsg");
+            if (m) m.textContent = "إعداد Firebase غير مكتمل (apiKey).";
+            throw new Error("Missing Firebase apiKey");
+        }
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -427,7 +447,7 @@
             });
         }
 
-        document.getElementById("loginBtn").addEventListener("click", async () => {
+        async function doLogin() {
             const email = (emailEl.value || "").trim();
             const password = passEl.value || "";
             if (!email || !password) {
@@ -439,14 +459,27 @@
                 await signInWithEmailAndPassword(auth, email, password);
                 authMsg.textContent = "";
             } catch (e) {
-                authMsg.textContent = "فشل الدخول: " + (e && e.message ? e.message : "Unknown error");
+                let msg = e && e.message ? e.message : "Unknown error";
+                if (/auth\/unauthorized-domain/i.test(msg) || /unauthorized-domain/i.test(msg)) {
+                    msg = "النطاق غير مسموح في Firebase. أضف github.io في Authorized domains.";
+                }
+                authMsg.textContent = "فشل الدخول: " + msg;
             }
+        }
+
+        document.getElementById("authForm").addEventListener("submit", (ev) => {
+            ev.preventDefault();
+            doLogin();
         });
 
         document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
-        document.getElementById("copyEmailBtn").addEventListener("click", () => {
+        document.getElementById("copyEmailBtn").addEventListener("click", async () => {
             const txt = auth.currentUser && auth.currentUser.email ? auth.currentUser.email : "";
-            navigator.clipboard.writeText(txt);
+            try {
+                await navigator.clipboard.writeText(txt);
+            } catch (_) {
+                window.prompt("نسخ الإيميل يدوياً:", txt);
+            }
         });
 
         onAuthStateChanged(auth, (user) => {
