@@ -1,17 +1,36 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mobile Manager - 4 KPIs</title>
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("posMobileTheme");
+                if (t === "light" || t === "dark") {
+                    document.documentElement.setAttribute("data-theme", t);
+                } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+                    document.documentElement.setAttribute("data-theme", "light");
+                } else {
+                    document.documentElement.setAttribute("data-theme", "dark");
+                }
+            } catch (e) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root {
+        html[data-theme="dark"] {
+            color-scheme: dark;
             --bg-a: #020617;
             --bg-b: #07132d;
+            --bg-grad-1: rgba(56, 189, 248, 0.16);
+            --bg-grad-2: rgba(99, 102, 241, 0.18);
             --surface: rgba(9, 19, 42, 0.62);
             --surface-strong: rgba(10, 23, 53, 0.82);
             --line: rgba(148, 163, 184, 0.22);
@@ -21,20 +40,139 @@
             --danger: #f87171;
             --primary: #60a5fa;
             --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+            --input-bg: rgba(2, 6, 23, 0.38);
+            --input-border: rgba(148, 163, 184, 0.33);
+            --input-fg: #fff;
+            --input-focus-border: rgba(96, 165, 250, 0.72);
+            --input-focus-ring: rgba(59, 130, 246, 0.12);
+            --kpi-icon-bg: rgba(255, 255, 255, 0.08);
+            --kpi-icon-fg: #bfdbfe;
+            --btn-ghost-bg: rgba(148, 163, 184, 0.14);
+            --btn-ghost-border: rgba(148, 163, 184, 0.3);
+            --btn-ghost-fg: #f8fafc;
+            --btn-danger-bg: rgba(239, 68, 68, 0.18);
+            --btn-danger-border: rgba(239, 68, 68, 0.35);
+            --btn-danger-fg: #fecaca;
+            --auth-logo-border: rgba(147, 197, 253, 0.35);
+            --auth-logo-fg: #dbeafe;
+            --meta-dash: rgba(148, 163, 184, 0.2);
+            --danger-text: #fca5a5;
+            --code-fg: #93c5fd;
+            --status-ok-bg: rgba(34, 197, 94, 0.16);
+            --status-ok-fg: #4ade80;
+            --status-ok-border: rgba(34, 197, 94, 0.32);
+            --status-err-bg: rgba(239, 68, 68, 0.14);
+            --status-err-fg: #fca5a5;
+            --status-err-border: rgba(239, 68, 68, 0.34);
+            --status-pending-bg: rgba(59, 130, 246, 0.14);
+            --status-pending-fg: #93c5fd;
+            --status-pending-border: rgba(59, 130, 246, 0.35);
+            --detail-heading-sales: #93c5fd;
+            --detail-heading-returns: #fca5a5;
+            --detail-heading-expenses: #fde047;
+            --detail-invoice-card-bg: rgba(2, 6, 23, 0.25);
+            --theme-toggle-bg: rgba(15, 23, 42, 0.55);
+            --theme-toggle-border: rgba(148, 163, 184, 0.25);
+            --theme-toggle-active: linear-gradient(135deg, rgba(37, 99, 235, 0.45), rgba(99, 102, 241, 0.32));
+        }
+        html[data-theme="light"] {
+            color-scheme: light;
+            --bg-a: #eef2ff;
+            --bg-b: #f8fafc;
+            --bg-grad-1: rgba(99, 102, 241, 0.14);
+            --bg-grad-2: rgba(56, 189, 248, 0.16);
+            --surface: rgba(255, 255, 255, 0.78);
+            --surface-strong: rgba(255, 255, 255, 0.92);
+            --line: rgba(15, 23, 42, 0.1);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --ok: #16a34a;
+            --danger: #dc2626;
+            --primary: #2563eb;
+            --shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+            --input-bg: #fff;
+            --input-border: rgba(15, 23, 42, 0.12);
+            --input-fg: #0f172a;
+            --input-focus-border: rgba(37, 99, 235, 0.55);
+            --input-focus-ring: rgba(37, 99, 235, 0.12);
+            --kpi-icon-bg: rgba(37, 99, 235, 0.1);
+            --kpi-icon-fg: #2563eb;
+            --btn-ghost-bg: rgba(15, 23, 42, 0.06);
+            --btn-ghost-border: rgba(15, 23, 42, 0.12);
+            --btn-ghost-fg: #334155;
+            --btn-danger-bg: rgba(239, 68, 68, 0.1);
+            --btn-danger-border: rgba(239, 68, 68, 0.28);
+            --btn-danger-fg: #b91c1c;
+            --auth-logo-border: rgba(37, 99, 235, 0.22);
+            --auth-logo-fg: #1d4ed8;
+            --meta-dash: rgba(15, 23, 42, 0.12);
+            --danger-text: #dc2626;
+            --code-fg: #2563eb;
+            --status-ok-bg: rgba(34, 197, 94, 0.12);
+            --status-ok-fg: #15803d;
+            --status-ok-border: rgba(34, 197, 94, 0.35);
+            --status-err-bg: rgba(239, 68, 68, 0.1);
+            --status-err-fg: #b91c1c;
+            --status-err-border: rgba(239, 68, 68, 0.3);
+            --status-pending-bg: rgba(59, 130, 246, 0.1);
+            --status-pending-fg: #1d4ed8;
+            --status-pending-border: rgba(59, 130, 246, 0.3);
+            --detail-heading-sales: #2563eb;
+            --detail-heading-returns: #dc2626;
+            --detail-heading-expenses: #b45309;
+            --detail-invoice-card-bg: rgba(255, 255, 255, 0.82);
+            --theme-toggle-bg: rgba(255, 255, 255, 0.9);
+            --theme-toggle-border: rgba(15, 23, 42, 0.1);
+            --theme-toggle-active: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(99, 102, 241, 0.14));
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             margin: 0;
             font-family: "Inter", "Segoe UI", Tahoma, Arial, sans-serif;
             background:
-                radial-gradient(1400px 700px at 100% -20%, rgba(56, 189, 248, 0.16), transparent 45%),
-                radial-gradient(1200px 600px at -20% 0%, rgba(99, 102, 241, 0.18), transparent 46%),
+                radial-gradient(1400px 700px at 100% -20%, var(--bg-grad-1), transparent 45%),
+                radial-gradient(1200px 600px at -20% 0%, var(--bg-grad-2), transparent 46%),
                 linear-gradient(160deg, var(--bg-a), var(--bg-b));
             color: var(--text-main);
             min-height: 100vh;
+            transition: background 0.28s ease, color 0.28s ease;
         }
-        .container { max-width: 700px; margin: 0 auto; padding: 16px; }
+        .container { max-width: 700px; margin: 0 auto; padding: 16px; padding-top: 56px; }
         .hidden { display: none !important; }
+        .theme-toggle-wrap {
+            position: fixed;
+            top: 12px;
+            inset-inline-end: 12px;
+            z-index: 1000;
+        }
+        .theme-toggle {
+            display: inline-flex;
+            padding: 3px;
+            border-radius: 999px;
+            background: var(--theme-toggle-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--theme-toggle-border);
+            box-shadow: var(--shadow);
+            gap: 2px;
+        }
+        .theme-toggle__btn {
+            border: 0;
+            background: transparent;
+            color: var(--text-muted);
+            padding: 8px 13px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.92rem;
+            line-height: 1;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+        }
+        .theme-toggle__btn:active { transform: scale(0.96); }
+        .theme-toggle__btn[aria-pressed="true"] {
+            background: var(--theme-toggle-active);
+            color: var(--text-main);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+        }
         .card {
             background: var(--surface);
             backdrop-filter: blur(10px);
@@ -43,6 +181,7 @@
             padding: 18px;
             margin-bottom: 14px;
             box-shadow: var(--shadow);
+            transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
         .title {
             margin: 0 0 8px;
@@ -60,9 +199,22 @@
             border-radius: 999px;
             font-size: 0.8rem;
             font-weight: 600;
-            background: rgba(34, 197, 94, 0.16);
-            color: #34d399;
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        .status.status--ok {
+            background: var(--status-ok-bg);
+            color: var(--status-ok-fg);
+            border: 1px solid var(--status-ok-border);
+        }
+        .status.status--err {
+            background: var(--status-err-bg);
+            color: var(--status-err-fg);
+            border: 1px solid var(--status-err-border);
+        }
+        .status.status--pending {
+            background: var(--status-pending-bg);
+            color: var(--status-pending-fg);
+            border: 1px solid var(--status-pending-border);
         }
         .grid {
             display: grid;
@@ -76,7 +228,7 @@
             border: 1px solid var(--line);
             border-radius: 16px;
             padding: 14px;
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.25s ease, box-shadow 0.25s ease;
         }
         .kpi:active {
             transform: scale(0.985);
@@ -109,9 +261,10 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.08);
-            color: #bfdbfe;
+            background: var(--kpi-icon-bg);
+            color: var(--kpi-icon-fg);
             font-size: 0.82rem;
+            transition: background 0.25s ease, color 0.25s ease;
         }
         .kpi .val {
             font-family: "Outfit", "Inter", sans-serif;
@@ -126,15 +279,20 @@
             margin: 7px 0;
             padding: 12px 13px;
             border-radius: 12px;
-            border: 1px solid rgba(148, 163, 184, 0.33);
-            background: rgba(2, 6, 23, 0.38);
-            color: #fff;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--input-fg);
             font-size: 0.95rem;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.88;
         }
         input:focus {
             outline: none;
-            border-color: rgba(96, 165, 250, 0.72);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 4px var(--input-focus-ring);
         }
         button {
             border: 0;
@@ -144,7 +302,7 @@
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 600;
-            transition: transform 0.18s ease, opacity 0.18s ease;
+            transition: transform 0.18s ease, opacity 0.18s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
         }
         button:active { transform: translateY(1px); }
         .btn-primary {
@@ -153,14 +311,15 @@
             box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32);
         }
         .btn-ghost {
-            background: rgba(148, 163, 184, 0.14);
-            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: var(--btn-ghost-bg);
+            border: 1px solid var(--btn-ghost-border);
+            color: var(--btn-ghost-fg);
             flex: 1;
         }
         .btn-danger {
-            background: rgba(239, 68, 68, 0.18);
-            border: 1px solid rgba(239, 68, 68, 0.35);
-            color: #fecaca;
+            background: var(--btn-danger-bg);
+            border: 1px solid var(--btn-danger-border);
+            color: var(--btn-danger-fg);
             flex: 1;
         }
         .auth-logo {
@@ -172,9 +331,10 @@
             justify-content: center;
             margin-bottom: 10px;
             background: linear-gradient(145deg, rgba(37, 99, 235, 0.35), rgba(99, 102, 241, 0.25));
-            border: 1px solid rgba(147, 197, 253, 0.35);
-            color: #dbeafe;
+            border: 1px solid var(--auth-logo-border);
+            color: var(--auth-logo-fg);
             font-size: 1.1rem;
+            transition: border-color 0.25s ease, color 0.25s ease;
         }
         .dash-head {
             display: flex;
@@ -183,17 +343,41 @@
             gap: 10px;
             margin-bottom: 6px;
         }
-        #authMsg { min-height: 20px; margin-top: 8px; color: #fca5a5; font-size: 0.85rem; }
+        #authMsg { min-height: 20px; margin-top: 8px; color: var(--danger-text); font-size: 0.85rem; }
+        .hint-code { color: var(--code-fg); }
+        #detailContent .detail-h {
+            font-weight: 700;
+            margin: 8px 0 4px;
+        }
+        #detailContent .detail-h--sales { margin-top: 0; color: var(--detail-heading-sales); }
+        #detailContent .detail-h--ret { margin-top: 12px; color: var(--detail-heading-returns); }
+        #detailContent .detail-h--exp { margin-top: 12px; color: var(--detail-heading-expenses); }
+        #detailContent .detail-invoice {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: var(--detail-invoice-card-bg);
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        #detailContent .detail-error { color: var(--danger-text); }
         #meta {
             color: var(--text-muted);
             font-size: 0.82rem;
             margin-top: 12px;
             padding-top: 10px;
-            border-top: 1px dashed rgba(148, 163, 184, 0.2);
+            border-top: 1px dashed var(--meta-dash);
+            transition: color 0.2s ease, border-color 0.2s ease;
         }
     </style>
 </head>
 <body>
+    <div class="theme-toggle-wrap">
+        <div class="theme-toggle" role="group" aria-label="وضع النهار أو الليل">
+            <button type="button" class="theme-toggle__btn" id="themeBtnDark" data-set-theme="dark" title="ليلي" aria-pressed="true"><i class="fas fa-moon" aria-hidden="true"></i></button>
+            <button type="button" class="theme-toggle__btn" id="themeBtnLight" data-set-theme="light" title="نهاري" aria-pressed="false"><i class="fas fa-sun" aria-hidden="true"></i></button>
+        </div>
+    </div>
     <div class="container">
         <div id="authCard" class="card">
             <div class="auth-logo"><i class="fas fa-crown"></i></div>
@@ -205,14 +389,14 @@
                 <button type="submit" id="loginBtn" class="btn-primary"><i class="fas fa-right-to-bracket"></i> دخول</button>
             </form>
             <div id="authMsg"></div>
-            <p class="sub" style="margin-top:14px; font-size:0.78rem; line-height:1.5;">إذا ظهر خطأ بعد الرفع على GitHub: أضف نطاق الصفحة في Firebase → Authentication → Settings → Authorized domains (مثل <code style="color:#93c5fd;">username.github.io</code>).</p>
+            <p class="sub" style="margin-top:14px; font-size:0.78rem; line-height:1.5;">إذا ظهر خطأ بعد الرفع على GitHub: أضف نطاق الصفحة في Firebase → Authentication → Settings → Authorized domains (مثل <code class="hint-code">username.github.io</code>).</p>
         </div>
 
         <div id="dashboard" class="hidden">
             <div class="card">
                 <div class="dash-head">
                     <h2 class="title" style="font-size:1.2rem; margin:0;">Laptop duhok POS</h2>
-                    <div id="status" class="status"><i class="fas fa-circle-notch fa-spin"></i> جاري الاتصال...</div>
+                    <div id="status" class="status status--pending"><i class="fas fa-circle-notch fa-spin"></i> جاري الاتصال...</div>
                 </div>
                 <div class="grid" style="margin-top:14px;">
                     <div class="kpi kpi-sales">
@@ -303,6 +487,25 @@
         let unsub = null;
         let unsubDetail = null;
 
+        const THEME_KEY = "posMobileTheme";
+        function syncThemeButtons() {
+            const t = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+            document.querySelectorAll(".theme-toggle__btn").forEach((btn) => {
+                btn.setAttribute("aria-pressed", btn.getAttribute("data-set-theme") === t ? "true" : "false");
+            });
+        }
+        function applyTheme(theme) {
+            const t = theme === "light" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", t);
+            try {
+                localStorage.setItem(THEME_KEY, t);
+            } catch (_) {}
+            syncThemeButtons();
+        }
+        document.getElementById("themeBtnDark").addEventListener("click", () => applyTheme("dark"));
+        document.getElementById("themeBtnLight").addEventListener("click", () => applyTheme("light"));
+        syncThemeButtons();
+
         function getBusinessDateKey(d) {
             const x = new Date(d);
             if (isNaN(x.getTime())) return "";
@@ -310,6 +513,19 @@
                 x.setDate(x.getDate() - 1);
             }
             return x.toDateString();
+        }
+
+        function formatBusinessDayForUi(d) {
+            const key = getBusinessDateKey(d);
+            if (!key) return "—";
+            const parsed = new Date(key);
+            if (isNaN(parsed.getTime())) return key;
+            return parsed.toLocaleDateString("ar-IQ", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
         }
 
         function esc(s) {
@@ -321,12 +537,20 @@
             return new Intl.NumberFormat("en-US").format(Number.isFinite(n) ? n : 0);
         }
 
-        function setStatus(text, ok) {
-            const icon = ok ? "fa-circle-check" : "fa-triangle-exclamation";
-            statusEl.innerHTML = '<i class="fas ' + icon + '"></i> ' + text;
-            statusEl.style.background = ok ? "rgba(34,197,94,0.16)" : "rgba(239,68,68,0.14)";
-            statusEl.style.borderColor = ok ? "rgba(34,197,94,0.32)" : "rgba(239,68,68,0.34)";
-            statusEl.style.color = ok ? "#4ade80" : "#fca5a5";
+        function setStatus(text, variant) {
+            if (!statusEl) return;
+            let v = "pending";
+            if (variant === true) v = "ok";
+            else if (variant === false) v = "err";
+            else if (variant === "ok" || variant === "err" || variant === "pending") v = variant;
+            statusEl.classList.remove("status--ok", "status--err", "status--pending");
+            statusEl.classList.add("status--" + v);
+            const icons = {
+                ok: "fa-circle-check",
+                err: "fa-triangle-exclamation",
+                pending: "fa-circle-notch fa-spin"
+            };
+            statusEl.innerHTML = '<i class="fas ' + icons[v] + '"></i> ' + text;
         }
 
         function bindDetail(channelId) {
@@ -364,14 +588,14 @@
                     }
 
                     let html = "";
-                    html += '<div style="font-weight:700; margin:8px 0 4px; color:#93c5fd;">فواتير البيع (' + sales.length + ")</div>";
+                    html += '<div class="detail-h detail-h--sales">فواتير البيع (' + sales.length + ")</div>";
                     if (!sales.length) {
                         html += '<div style="color:var(--text-muted);">—</div>';
                     } else {
                         sales.forEach((s) => {
                             const lines = Array.isArray(s.items) ? s.items.length : 0;
                             html +=
-                                '<div style="border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin-bottom:8px; background:rgba(2,6,23,0.25);">' +
+                                '<div class="detail-invoice">' +
                                 "<div><strong>#" +
                                 esc(s.id) +
                                 "</strong> · " +
@@ -386,7 +610,7 @@
                                 "</div></div>";
                         });
                     }
-                    html += '<div style="font-weight:700; margin:12px 0 4px; color:#fca5a5;">مرتجعات (' + ret.length + ")</div>";
+                    html += '<div class="detail-h detail-h--ret">مرتجعات (' + ret.length + ")</div>";
                     if (!ret.length) html += '<div style="color:var(--text-muted);">—</div>';
                     else {
                         ret.slice(0, 50).forEach((r) => {
@@ -398,7 +622,7 @@
                                 "</div>";
                         });
                     }
-                    html += '<div style="font-weight:700; margin:12px 0 4px; color:#fde047;">مصاريف اليوم (' + exp.length + ")</div>";
+                    html += '<div class="detail-h detail-h--exp">مصاريف اليوم (' + exp.length + ")</div>";
                     if (!exp.length) html += '<div style="color:var(--text-muted);">—</div>';
                     else {
                         exp.slice(0, 50).forEach((e) => {
@@ -416,13 +640,14 @@
                 },
                 () => {
                     detailContent.innerHTML =
-                        '<div style="color:#fca5a5;">تعذر قراءة التفاصيل (تحقق من قواعد Firestore).</div>';
+                        '<div class="detail-error">تعذر قراءة التفاصيل (تحقق من قواعد Firestore).</div>';
                 }
             );
         }
 
         function bindDashboard(channelId) {
             if (unsub) unsub();
+            setStatus("جاري التحديث...", "pending");
             const ref = doc(db, "pos_mobile_dashboard", channelId);
             unsub = onSnapshot(ref, (snap) => {
                 if (!snap.exists()) {
@@ -430,7 +655,8 @@
                     kpiExpenses.textContent = "0";
                     kpiNet.textContent = "0";
                     kpiInvoices.textContent = "0";
-                    metaEl.textContent = "آخر تحديث: لا توجد بيانات بعد";
+                    metaEl.textContent =
+                        "آخر تحديث: لا توجد بيانات بعد · يوم التشغيل: " + formatBusinessDayForUi(new Date());
                     setStatus("بانتظار أول مزامنة من اللابتوب", false);
                     return;
                 }
@@ -440,7 +666,11 @@
                 kpiNet.textContent = formatMoney(d.netProfitToday);
                 kpiInvoices.textContent = String(Number(d.invoicesCountToday || 0));
                 const ts = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : new Date();
-                metaEl.textContent = "آخر تحديث: " + ts.toLocaleTimeString("ar-IQ", { hour: "2-digit", minute: "2-digit" });
+                metaEl.textContent =
+                    "آخر تحديث: " +
+                    ts.toLocaleTimeString("ar-IQ", { hour: "2-digit", minute: "2-digit" }) +
+                    " · يوم التشغيل: " +
+                    formatBusinessDayForUi(new Date());
                 setStatus("متصل", true);
             }, () => {
                 setStatus("تعذر قراءة بيانات Firebase", false);
