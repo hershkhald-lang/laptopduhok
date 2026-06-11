@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <style>
         :root {
+            /* Dark Mode (Default) */
             --bg-a: #020617;
             --bg-b: #07132d;
             --surface: rgba(9, 19, 42, 0.62);
@@ -18,18 +19,40 @@
             --danger: #f87171;
             --primary: #60a5fa;
             --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+            --input-bg: rgba(2, 6, 23, 0.38);
+            --item-bg: rgba(2, 6, 23, 0.4);
+        }
+        
+        [data-theme="light"] {
+            /* Light Mode */
+            --bg-a: #f0fdfa;
+            --bg-b: #e0f2fe;
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-strong: rgba(255, 255, 255, 0.95);
+            --line: rgba(15, 23, 42, 0.12);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --ok: #16a34a;
+            --danger: #dc2626;
+            --primary: #2563eb;
+            --shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --item-bg: rgba(255, 255, 255, 0.6);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-weight: 500; }
         body {
             margin: 0;
             font-family: "Rudaw", "Noto Kufi Arabic", "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
             font-weight: 500;
-            background:
-                radial-gradient(1400px 700px at 100% -20%, rgba(56, 189, 248, 0.16), transparent 45%),
-                radial-gradient(1200px 600px at -20% 0%, rgba(99, 102, 241, 0.18), transparent 46%),
+            background-color: var(--bg-a);
+            background-image: 
+                radial-gradient(1400px 700px at 100% -20%, rgba(56, 189, 248, 0.12), transparent 45%),
+                radial-gradient(1200px 600px at -20% 0%, rgba(99, 102, 241, 0.12), transparent 46%),
                 linear-gradient(160deg, var(--bg-a), var(--bg-b));
+            background-attachment: fixed;
             color: var(--text-main);
             min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .container { max-width: 700px; margin: 0 auto; padding: 16px; }
         .hidden { display: none !important; }
@@ -125,8 +148,8 @@
             padding: 12px 13px;
             border-radius: 12px;
             border: 1px solid rgba(148, 163, 184, 0.33);
-            background: rgba(2, 6, 23, 0.38);
-            color: #fff;
+            background: var(--input-bg);
+            color: var(--text-main);
             font-size: 0.95rem;
         }
         input:focus {
@@ -189,9 +212,42 @@
             padding-top: 10px;
             border-top: 1px dashed rgba(148, 163, 184, 0.2);
         }
+        
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px; /* changed from right to left because dir="rtl" */
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--surface-strong);
+            border: 1px solid var(--line);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
+    <script>
+        // Load theme immediately to prevent flash of wrong theme
+        const savedTheme = localStorage.getItem('pos_mobile_theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    </script>
+    <button id="themeToggleBtn" class="theme-toggle">
+        <i class="fas fa-sun" id="themeIcon"></i>
+    </button>
     <div class="container">
         <div id="authCard" class="card">
             <div class="auth-logo"><i class="fas fa-crown"></i></div>
@@ -209,43 +265,47 @@
         <div id="dashboard" class="hidden">
             <div class="card">
                 <div class="dash-head">
-                    <h2 class="title" style="font-size:1.2rem; margin:0;">Laptop duhok POS</h2>
+                    <h2 class="title" style="font-size:1.2rem; margin:0;"><i class="fas fa-laptop" style="color: var(--primary);"></i> Laptop Duhok POS</h2>
                     <div id="status" class="status"><i class="fas fa-circle-notch fa-spin"></i> جاري الاتصال...</div>
                 </div>
                 <div class="grid" style="margin-top:14px;">
                     <div class="kpi kpi-sales">
                         <div class="head">
                             <div class="label">مبيعات اليوم</div>
-                            <div class="icon"><i class="fas fa-wallet"></i></div>
-            </div>
-                        <div id="kpiSales" class="val">0</div>
-                </div>
+                            <div class="icon" style="color: #60a5fa;"><i class="fas fa-wallet"></i></div>
+                        </div>
+                        <div id="kpiSales" class="val" style="color: #60a5fa;">0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">إجمالي المبيعات بدون المرتجعات</div>
+                    </div>
                     <div class="kpi kpi-expenses">
                         <div class="head">
                             <div class="label">المصاريف</div>
-                            <div class="icon"><i class="fas fa-hand-holding-dollar"></i></div>
-                </div>
-                        <div id="kpiExpenses" class="val">0</div>
-                </div>
+                            <div class="icon" style="color: #f87171;"><i class="fas fa-hand-holding-dollar"></i></div>
+                        </div>
+                        <div id="kpiExpenses" class="val" style="color: #f87171;">0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">إجمالي المصروفات اليومية</div>
+                    </div>
                     <div class="kpi kpi-net">
                         <div class="head">
                             <div class="label">صافي الربح</div>
-                            <div class="icon"><i class="fas fa-chart-line"></i></div>
-                </div>
-                        <div id="kpiNet" class="val">0</div>
+                            <div class="icon" style="color: #34d399;"><i class="fas fa-chart-line"></i></div>
+                        </div>
+                        <div id="kpiNet" class="val" style="color: #34d399;">0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">الأرباح بعد خصم التكاليف</div>
                     </div>
                     <div class="kpi kpi-invoices">
                         <div class="head">
                             <div class="label">عدد الفواتير</div>
-                            <div class="icon"><i class="fas fa-receipt"></i></div>
+                            <div class="icon" style="color: #fbbf24;"><i class="fas fa-receipt"></i></div>
                         </div>
-                        <div id="kpiInvoices" class="val">0</div>
+                        <div id="kpiInvoices" class="val" style="color: #fbbf24;">0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">إجمالي عدد الفواتير المقطوعة</div>
                     </div>
                 </div>
                 <div id="meta">آخر تحديث: -</div>
                 <div class="row" style="margin-top:12px;">
                     <button id="copyEmailBtn" class="btn-ghost"><i class="fas fa-copy"></i> نسخ الإيميل</button>
-                    <button id="logoutBtn" class="btn-danger"><i class="fas fa-power-off"></i> خروج</button>
+                    <button id="logoutBtn" class="btn-danger"><i class="fas fa-power-off"></i> تسجيل الخروج</button>
                 </div>
             </div>
 
@@ -367,46 +427,54 @@
                         html += '<div style="color:var(--text-muted);">—</div>';
                     } else {
                         sales.forEach((s) => {
-                            const lines = Array.isArray(s.items) ? s.items.length : 0;
+                            const itemsArr = Array.isArray(s.items) ? s.items : [];
+                            const lines = itemsArr.length;
+                            
+                            let itemsHtml = "";
+                            if(lines > 0) {
+                                itemsHtml = '<div style="margin-top: 8px; border-top: 1px dashed rgba(148,163,184,0.2); padding-top: 8px;">';
+                                itemsArr.forEach(it => {
+                                    itemsHtml += '<div style="display:flex; justify-content:space-between; font-size: 0.85rem; margin-bottom: 6px;">';
+                                    itemsHtml += '<span style="color: #f1f5f9;">' + esc(it.qty) + 'x ' + esc(it.name) + '</span>';
+                                    itemsHtml += '<span style="color: #94a3b8; font-weight: bold;">' + formatMoney(it.price) + '</span>';
+                                    itemsHtml += '</div>';
+                                });
+                                itemsHtml += '</div>';
+                            }
+                            
                             html +=
-                                '<div style="border:1px solid var(--line); border-radius:10px; padding:8px 10px; margin-bottom:8px; background:rgba(2,6,23,0.25);">' +
-                                "<div><strong>#" +
-                                esc(s.id) +
-                                "</strong> · " +
-                                formatMoney(s.total) +
-                                " · " +
-                                esc(s.payment_method || "") +
+                                '<div style="border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; background:rgba(2,6,23,0.4);">' +
+                                '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                                '<div><strong style="color: #60a5fa; font-size: 1.1rem;">#' + esc(s.id) + "</strong></div>" +
+                                '<div style="font-weight:bold; color: #34d399; font-size: 1.1rem;">' + formatMoney(s.total) + " د.ع</div>" +
                                 "</div>" +
-                                '<div style="color:var(--text-muted); font-size:0.82rem; margin-top:4px;">' +
-                                esc(s.cashier || "") +
-                                " · بنود: " +
-                                lines +
-                                "</div></div>";
+                                '<div style="color:var(--text-muted); font-size:0.85rem; margin-top:6px; display:flex; justify-content:space-between;">' +
+                                '<span><i class="fas fa-user" style="font-size:0.75rem; margin-left:4px;"></i>' + esc(s.cashier || "الكاشير") + '</span>' +
+                                '<span><i class="fas fa-money-bill" style="font-size:0.75rem; margin-left:4px;"></i>' + esc(s.payment_method || "نقدي") + '</span>' +
+                                "</div>" + 
+                                itemsHtml +
+                                "</div>";
                         });
                     }
                     html += '<div style="font-weight:700; margin:12px 0 4px; color:#fca5a5;">مرتجعات (' + ret.length + ")</div>";
                     if (!ret.length) html += '<div style="color:var(--text-muted);">—</div>';
                     else {
-                        ret.slice(0, 50).forEach((r) => {
+                        ret.slice(0, 100).forEach((r) => {
                             html +=
-                                '<div style="margin-bottom:6px;">#' +
-                                esc(r.id) +
-                                " · " +
-                                formatMoney(r.total) +
+                                '<div style="margin-bottom:8px; border-bottom:1px dashed rgba(248,113,113,0.2); padding-bottom:6px;">#' +
+                                '<strong style="color: #fca5a5;">' + esc(r.id) + "</strong> · " +
+                                '<span style="font-weight:bold; color: #f87171;">' + formatMoney(r.total) + ' د.ع</span>' +
                                 "</div>";
                         });
                     }
-                    html += '<div style="font-weight:700; margin:12px 0 4px; color:#fde047;">مصاريف اليوم (' + exp.length + ")</div>";
+                    html += '<div style="font-weight:700; margin:18px 0 6px; color:#fde047;">مصاريف اليوم (' + exp.length + ")</div>";
                     if (!exp.length) html += '<div style="color:var(--text-muted);">—</div>';
                     else {
-                        exp.slice(0, 50).forEach((e) => {
+                        exp.slice(0, 100).forEach((e) => {
                             html +=
-                                '<div style="margin-bottom:6px;">' +
-                                formatMoney(e.amount) +
-                                " · " +
-                                esc(e.type || "") +
-                                " " +
-                                esc(e.note || "") +
+                                '<div style="margin-bottom:8px; border-bottom:1px dashed rgba(253,224,71,0.2); padding-bottom:6px; display:flex; justify-content:space-between; align-items:center;">' +
+                                '<div>' + esc(e.type || "") + " " + esc(e.note || "") + '</div>' + 
+                                '<div style="font-weight:bold; color: #fde047;">' + formatMoney(e.amount) + ' د.ع</div>' +
                                 "</div>";
                         });
                     }
@@ -464,6 +532,33 @@
                 authMsg.textContent = "فشل الدخول: " + msg;
             }
         }
+
+        // Theme Toggle Logic
+        const themeBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        function updateThemeIcon() {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            if(isLight) {
+                themeIcon.className = 'fas fa-moon';
+                themeIcon.style.color = '#3b82f6';
+            } else {
+                themeIcon.className = 'fas fa-sun';
+                themeIcon.style.color = '#fbbf24';
+            }
+        }
+        
+        // Initial icon update
+        updateThemeIcon();
+        
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('pos_mobile_theme', newTheme);
+            updateThemeIcon();
+        });
 
         document.getElementById("authForm").addEventListener("submit", (ev) => {
             ev.preventDefault();
