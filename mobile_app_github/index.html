@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="LD Manager" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="LD Manager" />
-    <title>Laptop Duhok POS — MOBILE APP v2.13.52</title>
+    <title>Laptop Duhok POS — MOBILE APP v2.13.53</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/brand/laptop-duhok-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/brand/laptop-duhok-logo.png">
@@ -631,7 +631,7 @@
                 </div>
                 <div>
                     <p class="brand-title">Laptop Duhok POS</p>
-                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.13.52</span></p>
+                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.13.53</span></p>
                 </div>
             </div>
             <div class="topbar-actions">
@@ -982,6 +982,39 @@
         function formatMoney(v) {
             const n = Number(v || 0);
             return new Intl.NumberFormat("en-US").format(Number.isFinite(n) ? n : 0);
+        }
+
+        function groupSaleLineItems(items) {
+            const grouped = {};
+            (items || []).forEach((it) => {
+                const qty =
+                    Number(it.qty) > 0
+                        ? Number(it.qty)
+                        : Number(it.count) > 0
+                          ? Number(it.count)
+                          : 1;
+                const price = Number(it.price) || 0;
+                const saleUnit = it.saleUnit || "piece";
+                const note = String(it.note || "");
+                const key =
+                    String(it.id || it.name || "") +
+                    "_" +
+                    note +
+                    "_" +
+                    price +
+                    "_" +
+                    saleUnit;
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        name: String(it.name || ""),
+                        qty: 0,
+                        price,
+                        saleUnit
+                    };
+                }
+                grouped[key].qty += qty;
+            });
+            return Object.values(grouped);
         }
 
         function setStatus(text, ok) {
@@ -1549,12 +1582,12 @@
             if (!sales.length) html += '<div class="detail-empty">—</div>';
             else {
                 sales.forEach((s) => {
-                    const itemsArr = Array.isArray(s.items) ? s.items : [];
+                    const itemsArr = groupSaleLineItems(Array.isArray(s.items) ? s.items : []);
                     let itemsHtml = "";
                     if (itemsArr.length) {
                         itemsHtml = '<div class="sale-items">';
                         itemsArr.forEach((it) => {
-                            itemsHtml += '<div class="sale-item"><span>' + esc(it.qty) + "× " + esc(it.name) + '</span><span class="price">' + formatMoney(it.price) + "</span></div>";
+                            itemsHtml += '<div class="sale-item"><span>' + esc(formatQty(it.qty)) + "× " + esc(it.name) + '</span><span class="price">' + formatMoney(it.price) + "</span></div>";
                         });
                         itemsHtml += "</div>";
                     }
