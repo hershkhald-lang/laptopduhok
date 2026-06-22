@@ -1,7 +1,7 @@
 /**
  * PWA service worker — Mobile Manager (public/mobile_manager/)
  */
-const CACHE_NAME = "ld-manager-pwa-v10";
+const CACHE_NAME = "ld-manager-pwa-v11";
 const SHELL = [
     "./index.html",
     "./manifest.json",
@@ -49,9 +49,10 @@ self.addEventListener("fetch", function (event) {
 
     var path = url.pathname;
     var isShell =
-        path.indexOf("mobile_manager") !== -1 &&
+        (path.indexOf("mobile_manager") !== -1 || path.indexOf("mobile_app_github") !== -1) &&
         (path.endsWith("index.html") ||
             path.endsWith("/mobile_manager/") ||
+            path.endsWith("/mobile_app_github/") ||
             path.indexOf("manifest.json") !== -1 ||
             path.indexOf("laptop-duhok-logo") !== -1);
 

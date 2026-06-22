@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="LD Manager" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="LD Manager" />
-    <title>Laptop Duhok POS — MOBILE APP v2.13.99</title>
+    <title>Laptop Duhok POS — MOBILE APP v2.14.30</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/brand/laptop-duhok-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/brand/laptop-duhok-logo.png">
@@ -123,6 +123,10 @@
             background: linear-gradient(135deg, #6366f1, #059669);
             box-shadow: 0 8px 22px rgba(99, 102, 241, 0.35);
         }
+        .nav-tab.active.nav-tab-debt {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            box-shadow: 0 8px 22px rgba(245, 158, 11, 0.35);
+        }
         .nav-tab.active.nav-tab-home {
             background: linear-gradient(135deg, #0ea5e9, #6366f1);
             box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
@@ -163,6 +167,8 @@
         .home-tile.tile-dash i { color: #60a5fa; }
         .home-tile.tile-inv { border-color: rgba(16,185,129,.35); background: linear-gradient(160deg, rgba(16,185,129,.1), var(--surface-2)); }
         .home-tile.tile-inv i { color: #34d399; }
+        .home-tile.tile-debt { border-color: rgba(245,158,11,.35); background: linear-gradient(160deg, rgba(245,158,11,.1), var(--surface-2)); grid-column: span 2; }
+        .home-tile.tile-debt i { color: #fbbf24; }
         .home-foot { margin-top: 14px; font-size: 0.76rem; color: var(--muted); text-align: center; }
         .install-card {
             margin-top: 14px; padding: 14px; border-radius: var(--radius-sm);
@@ -570,6 +576,62 @@
             overflow: visible;
             padding-bottom: 4px;
         }
+        .debt-sub-tabs {
+            display: flex; gap: 8px; margin-bottom: 10px;
+        }
+        .debt-sub-tab {
+            flex: 1; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--line);
+            background: var(--input-bg); color: var(--muted); font-weight: 700; font-size: 0.78rem;
+        }
+        .debt-sub-tab.active {
+            color: #fff; border-color: transparent;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+        }
+        .debt-sub-tab.active.suppliers {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        }
+        .debt-scroll-area {
+            max-height: min(58vh, 480px);
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+        .debt-row {
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid var(--line);
+            cursor: pointer;
+        }
+        .debt-row-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%; }
+        .debt-row.expanded { background: rgba(245, 158, 11, 0.06); border-radius: 10px; padding: 10px 8px; margin: 0 -8px; }
+        .debt-row-detail {
+            width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
+            font-size: 0.74rem;
+        }
+        .debt-detail-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-bottom: 8px;
+        }
+        .debt-detail-grid span { color: var(--muted); }
+        .debt-detail-grid strong { display: block; font-size: 0.8rem; direction: ltr; text-align: left; }
+        .debt-ledger-mini .line-row { padding: 6px 0; font-size: 0.72rem; }
+        .debt-chevron { color: var(--muted); font-size: 0.7rem; margin-top: 4px; }
+        .debt-row:last-child { border-bottom: none; }
+        .debt-row-name { font-weight: 700; font-size: 0.95rem; }
+        .debt-entity-label {
+            font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em;
+            margin-bottom: 2px; display: block;
+        }
+        .debt-row-amt-block { text-align: left; direction: ltr; min-width: 92px; }
+        .debt-row-name-block { flex: 1; min-width: 0; }
+        .debt-row-meta { font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
+        .debt-row-amt { font-weight: 800; font-size: 0.95rem; white-space: nowrap; direction: ltr; }
+        .debt-row-amt.positive { color: #f87171; }
+        .debt-row-amt.credit { color: #34d399; }
+        .debt-badge-warn {
+            display: inline-block; font-size: 0.62rem; padding: 2px 6px; border-radius: 6px;
+            background: rgba(239,68,68,.15); color: #fca5a5; margin-top: 4px;
+        }
+        .kpi-debt-cust .val { color: #f87171; }
+        .kpi-debt-sup .val { color: #a78bfa; }
         .inv-section { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
         .inv-scan-row { margin-bottom: 10px; }
         .inv-scan-btn {
@@ -631,7 +693,7 @@
                 </div>
                 <div>
                     <p class="brand-title">Laptop Duhok POS</p>
-                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.13.99</span></p>
+                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.14.30</span></p>
                 </div>
             </div>
             <div class="topbar-actions">
@@ -718,6 +780,11 @@
                             <i class="fas fa-warehouse"></i>
                             <strong>جەرد / کۆگە</strong>
                             <small>لیست · پۆل · مێژوو</small>
+                        </button>
+                        <button type="button" class="home-tile tile-debt" id="homeGoDebt">
+                            <i class="fas fa-scale-balanced"></i>
+                            <strong>قەرز</strong>
+                            <small>کڕیار · کۆمپانیا (تەنها بینین)</small>
                         </button>
                     </div>
                     <p class="home-foot" id="homeLastSync"><i class="fas fa-clock"></i> دوایین sync: —</p>
@@ -852,6 +919,45 @@
                     </div>
                 </div>
                 </div>
+
+                <div id="panelDebt" class="app-panel panel-inv-compact hidden">
+                <div id="debtCard" class="card">
+                    <h2 class="section-title"><i class="fas fa-scale-balanced" style="color:#fbbf24"></i> قەرز</h2>
+                    <p class="sub" id="debtMeta" style="margin:0;">کڕیار · کۆمپانیا</p>
+                    <div class="read-only-notice">
+                        <i class="fas fa-shield-halved"></i>
+                        <span><strong>تەنها بینین.</strong> پارەدان و گۆڕانکاری لە POS دەمێنێت — موبایل هیچ ژمارەیەک ناگۆڕێت.</span>
+                    </div>
+
+                    <div class="grid inv-kpi-grid">
+                        <div class="kpi kpi-debt-cust">
+                            <div class="head">
+                                <div class="label">قەرزی کڕیار</div>
+                                <div class="icon"><i class="fas fa-user"></i></div>
+                            </div>
+                            <div id="debtCustTotal" class="val">0</div>
+                            <div class="hint" id="debtCustCount">0 کڕیار</div>
+                        </div>
+                        <div class="kpi kpi-debt-sup">
+                            <div class="head">
+                                <div class="label">قەرزی کۆمپانیا</div>
+                                <div class="icon"><i class="fas fa-building"></i></div>
+                            </div>
+                            <div id="debtSupTotal" class="val">0</div>
+                            <div class="hint" id="debtSupCount">0 کۆمپانیا</div>
+                        </div>
+                    </div>
+
+                    <div class="debt-sub-tabs" role="tablist">
+                        <button type="button" class="debt-sub-tab active" id="debtTabCustomers" data-debt-tab="customers">کڕیار</button>
+                        <button type="button" class="debt-sub-tab suppliers" id="debtTabCompanies" data-debt-tab="companies">کۆمپانیا</button>
+                    </div>
+
+                    <div id="debtContent" class="debt-scroll-area">
+                        <div class="detail-empty">چاوەڕێی داتا…</div>
+                    </div>
+                </div>
+                </div>
             </div>
         </div>
 
@@ -867,6 +973,10 @@
             <button type="button" id="tabInv" class="nav-tab nav-tab-inv" aria-pressed="false">
                 <i class="fas fa-warehouse"></i>
                 <span>کۆگە</span>
+            </button>
+            <button type="button" id="tabDebt" class="nav-tab nav-tab-debt" aria-pressed="false">
+                <i class="fas fa-scale-balanced"></i>
+                <span>قەرز</span>
             </button>
         </nav>
 
@@ -929,6 +1039,7 @@
         let unsub = null;
         let unsubDetail = null;
         let unsubInventory = null;
+        let unsubDebt = null;
         let activeChannelId = "";
         let refreshBusy = false;
         const refreshBtn = document.getElementById("refreshBtn");
@@ -938,10 +1049,12 @@
         const panelHome = document.getElementById("panelHome");
         const panelDash = document.getElementById("panelDash");
         const panelInv = document.getElementById("panelInv");
+        const panelDebt = document.getElementById("panelDebt");
         const bottomNav = document.getElementById("bottomNav");
         const tabHomeBtn = document.getElementById("tabHome");
         const tabDashBtn = document.getElementById("tabDash");
         const tabInvBtn = document.getElementById("tabInv");
+        const tabDebtBtn = document.getElementById("tabDebt");
 
         function setTabActive(btn, on) {
             if (!btn) return;
@@ -950,13 +1063,15 @@
         }
 
         function switchMobileTab(tab) {
-            const t = tab === "inv" ? "inv" : tab === "dash" ? "dash" : "home";
+            const t = tab === "debt" ? "debt" : tab === "inv" ? "inv" : tab === "dash" ? "dash" : "home";
             if (panelHome) panelHome.classList.toggle("hidden", t !== "home");
             if (panelDash) panelDash.classList.toggle("hidden", t !== "dash");
             if (panelInv) panelInv.classList.toggle("hidden", t !== "inv");
+            if (panelDebt) panelDebt.classList.toggle("hidden", t !== "debt");
             setTabActive(tabHomeBtn, t === "home");
             setTabActive(tabDashBtn, t === "dash");
             setTabActive(tabInvBtn, t === "inv");
+            setTabActive(tabDebtBtn, t === "debt");
             try { localStorage.setItem("pos_mobile_tab", t); } catch (e) {}
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -1047,6 +1162,239 @@
         let invScanBannerText = "";
         let invStDayMode = "today";
         let invDateFiltersBound = false;
+
+        let debtCustomersCache = [];
+        let debtCompaniesCache = [];
+        let debtCustLedgerCache = [];
+        let debtCompLedgerCache = [];
+        let debtCustLedgerById = {};
+        let debtCompLedgerById = {};
+        let debtExpandedId = null;
+        let debtDocSynced = false;
+        let invDocSynced = false;
+        let debtActiveTab = "customers";
+        let debtSearchText = "";
+        let debtFiltersBound = false;
+
+        function debtLedgerTypeLabel(type) {
+            const map = {
+                sale: "فرۆشتن",
+                payment: "پارەدان",
+                return: "گەڕانەوە",
+                credit_purchase: "کڕین بە قەرز",
+                purchase: "کڕین",
+                receive: "وەرگرتن",
+                return_to_supplier: "زڤڕاندن",
+                debt_payment: "پارەدان"
+            };
+            return map[String(type || "")] || String(type || "—");
+        }
+
+        function filterDebtRows(rows, q) {
+            const term = String(q || "").trim().toLowerCase();
+            if (!term) return rows.slice();
+            return rows.filter(function (r) {
+                return String(r.name || "").toLowerCase().indexOf(term) >= 0 ||
+                    String(r.phone || "").toLowerCase().indexOf(term) >= 0;
+            });
+        }
+
+        function renderDebtLedgerMini(entries, emptyLabel) {
+            if (!entries || !entries.length) {
+                return '<div class="detail-empty" style="padding:6px 0;font-size:0.72rem;">' + esc(emptyLabel || "هیچ جووڵەیەک نییە.") + "</div>";
+            }
+            let html = '<div class="debt-ledger-mini">';
+            entries.forEach(function (e) {
+                const amt = Number(e.amount) || 0;
+                const who = e.name || e.targetName || e.companyName || "";
+                html += '<div class="line-row"><span>' +
+                    (who ? '<strong style="color:var(--text);">' + esc(who) + "</strong><br>" : "") +
+                    esc(debtLedgerTypeLabel(e.type)) +
+                    (e.note ? " · " + esc(e.note) : "") +
+                    '<br><small style="color:var(--muted)">' + esc(e.date || "") + "</small></span>" +
+                    '<span class="amt">' + formatMoney(amt) + "</span></div>";
+            });
+            html += "</div>";
+            return html;
+        }
+
+        function renderDebtRowDetail(r, isCust) {
+            const idKey = String(r.id);
+            const byId = isCust ? debtCustLedgerById : debtCompLedgerById;
+            const entries = (byId && byId[idKey]) ? byId[idKey] : [];
+            const limit = Number(r.debtLimit) || 0;
+            const opening = Number(r.openingBalance) || 0;
+            let html = '<div class="debt-detail-grid">' +
+                '<div><span>قەرزی ئێستا</span><strong>' + formatMoney(Number(r.balance) || 0) + " د.ع</strong></div>" +
+                '<div><span>سنووری قەرز</span><strong>' + (limit > 0 ? formatMoney(limit) + " د.ع" : "—") + "</strong></div>" +
+                '<div><span>قەرزی سەرەتایی</span><strong>' + formatMoney(opening) + " د.ع</strong></div>" +
+                '<div><span>ژمارە</span><strong>#' + esc(idKey) + "</strong></div>" +
+                "</div>";
+            html += '<div class="detail-h expenses" style="margin:6px 0 4px;font-size:0.72rem;"><i class="fas fa-list"></i> مێژووی قەرز</div>';
+            html += renderDebtLedgerMini(entries, "هیچ تۆمارێک نییە بۆ ئەم " + (isCust ? "کڕیارە" : "کۆمپانیایە") + ".");
+            return html;
+        }
+
+        function renderDebtListHtml() {
+            const isCust = debtActiveTab === "customers";
+            const rows = filterDebtRows(isCust ? debtCustomersCache : debtCompaniesCache, debtSearchText);
+            let html = '<div class="inv-toolbar" style="margin-bottom:8px;">' +
+                '<input type="search" id="debtSearchIn" class="inv-search" placeholder="گەڕان: ناو، تەلەفۆن…" value="' + esc(debtSearchText) + '" inputmode="search" autocomplete="off" style="width:100%;">' +
+                "</div>";
+            if (!rows.length) {
+                html += '<div class="detail-empty">' + (isCust ? "هیچ قەرزی کڕیار نییە." : "هیچ قەرزی کۆمپانیا نییە.") + "</div>";
+                const ledger = isCust ? debtCustLedgerCache : debtCompLedgerCache;
+                if (ledger.length) {
+                    html += '<div class="inv-section"><div class="detail-h expenses"><i class="fas fa-clock-rotate-left"></i> دوایین جووڵەکان (گشتی)</div>';
+                    html += renderDebtLedgerMini(ledger.slice(0, 20));
+                    html += "</div>";
+                }
+                return html;
+            }
+            rows.forEach(function (r) {
+                const bal = Number(r.balance) || 0;
+                const amtCls = bal > 0 ? "positive" : "credit";
+                const phone = r.phone ? ('<div class="debt-row-meta"><i class="fas fa-phone"></i> ' + esc(r.phone) + "</div>") : "";
+                const warn = r.overLimit ? '<span class="debt-badge-warn"><i class="fas fa-triangle-exclamation"></i> سنوور تێپەڕی</span>' : "";
+                const idKey = String(r.id);
+                const expanded = debtExpandedId === idKey;
+                const limit = Number(r.debtLimit) || 0;
+                const metaExtra = (limit > 0 ? ('<div class="debt-row-meta">سنوور: ' + formatMoney(limit) + " د.ع</div>") : "");
+                const entityLabel = isCust ? "ناوی کڕیار" : "ناوی کۆمپانیا";
+                html += '<div class="debt-row' + (expanded ? " expanded" : "") + '" data-debt-id="' + esc(idKey) + '">' +
+                    '<div class="debt-row-head">' +
+                    '<div class="debt-row-name-block">' +
+                    '<span class="debt-entity-label">' + entityLabel + "</span>" +
+                    '<div class="debt-row-name">' + esc(r.name || "—") + "</div>" + phone + metaExtra + warn +
+                    '<div class="debt-chevron"><i class="fas fa-chevron-' + (expanded ? "up" : "down") + '"></i> ' +
+                    (expanded ? "شاردنەوە" : "وردەکاری") + "</div></div>" +
+                    '<div class="debt-row-amt-block">' +
+                    '<span class="debt-entity-label">قەرز</span>' +
+                    '<div class="debt-row-amt ' + amtCls + '">' + formatMoney(Math.abs(bal)) + " د.ع</div></div></div>";
+                if (expanded) {
+                    html += '<div class="debt-row-detail">' + renderDebtRowDetail(r, isCust) + "</div>";
+                }
+                html += "</div>";
+            });
+            return html;
+        }
+
+        function refreshDebtView() {
+            const el = document.getElementById("debtContent");
+            if (!el) return;
+            el.innerHTML = renderDebtListHtml();
+        }
+
+        function setDebtSubTab(which) {
+            debtActiveTab = which === "companies" ? "companies" : "customers";
+            debtExpandedId = null;
+            const tc = document.getElementById("debtTabCustomers");
+            const ts = document.getElementById("debtTabCompanies");
+            if (tc) tc.classList.toggle("active", debtActiveTab === "customers");
+            if (ts) ts.classList.toggle("active", debtActiveTab === "companies");
+            refreshDebtView();
+        }
+
+        function bindDebtFilters() {
+            const el = document.getElementById("debtContent");
+            if (!el || debtFiltersBound) return;
+            debtFiltersBound = true;
+            let tmr = null;
+            el.addEventListener("input", function (e) {
+                if (!e.target || e.target.id !== "debtSearchIn") return;
+                clearTimeout(tmr);
+                const inp = e.target;
+                tmr = setTimeout(function () {
+                    debtSearchText = inp.value || "";
+                    refreshDebtView();
+                    const again = document.getElementById("debtSearchIn");
+                    if (again) {
+                        again.focus();
+                        again.setSelectionRange(debtSearchText.length, debtSearchText.length);
+                    }
+                }, 180);
+            });
+            const tc = document.getElementById("debtTabCustomers");
+            const ts = document.getElementById("debtTabCompanies");
+            if (tc) tc.addEventListener("click", function () { setDebtSubTab("customers"); });
+            if (ts) ts.addEventListener("click", function () { setDebtSubTab("companies"); });
+            el.addEventListener("click", function (e) {
+                const row = e.target && e.target.closest ? e.target.closest(".debt-row[data-debt-id]") : null;
+                if (!row || (e.target && e.target.id === "debtSearchIn")) return;
+                const id = row.getAttribute("data-debt-id");
+                debtExpandedId = debtExpandedId === id ? null : id;
+                refreshDebtView();
+            });
+        }
+
+        function applyDebtData(data) {
+            const debtContent = document.getElementById("debtContent");
+            const debtMeta = document.getElementById("debtMeta");
+            const debtCustTotal = document.getElementById("debtCustTotal");
+            const debtSupTotal = document.getElementById("debtSupTotal");
+            const debtCustCount = document.getElementById("debtCustCount");
+            const debtSupCount = document.getElementById("debtSupCount");
+            if (!debtContent) return;
+            if (!data) {
+                debtDocSynced = false;
+                let hint = 'لە POS: ڕێکخستن → Firebase sync → <strong>پەیوەست بکە</strong> (هەمان ئیمەیڵ)<br>' +
+                    'پاشان <strong>«ئێستا هاوکات بکە»</strong> بگرە و ≈١٣ چرکە چاوەڕێ بکە.';
+                if (invDocSynced) {
+                    hint = 'کۆگە هاتە موبایل بەڵام <strong>قەرز</strong> هێشتا نەنێردراوە.<br>' +
+                        'لە POS: تابی <strong>کۆمپانیا</strong> بکەرەوە، پاشان <strong>«ئێستا هاوکات بکە»</strong> (Ctrl+F5 سەرەتا).';
+                }
+                if (activeChannelId) {
+                    hint += '<br><small style="color:var(--muted)">کەناڵ: ' + esc(activeChannelId) + '</small>';
+                }
+                debtContent.innerHTML = '<div class="detail-empty">هێشتا داتای قەرز لە Firebase نییە.<br><br>' + hint +
+                    '<br><br><button type="button" class="btn-ghost" onclick="document.getElementById(\'refreshBtn\')&&document.getElementById(\'refreshBtn\').click()" style="margin-top:8px;width:100%;"><i class="fas fa-arrows-rotate"></i> Refresh</button></div>';
+                if (debtMeta) debtMeta.textContent = "کڕیار · کۆمپانیا";
+                if (debtCustTotal) debtCustTotal.textContent = "0";
+                if (debtSupTotal) debtSupTotal.textContent = "0";
+                if (debtCustCount) debtCustCount.textContent = "0 کڕیار";
+                if (debtSupCount) debtSupCount.textContent = "0 کۆمپانیا";
+                return;
+            }
+            debtDocSynced = true;
+            const summary = data.summary || {};
+            const meta = data.meta || {};
+            if (debtCustTotal) debtCustTotal.textContent = formatMoney(summary.customerReceivables || 0);
+            if (debtSupTotal) debtSupTotal.textContent = formatMoney(summary.supplierPayables || 0);
+            if (debtCustCount) debtCustCount.textContent = String(Number(summary.customerDebtorCount || 0)) + " کڕیار";
+            if (debtSupCount) debtSupCount.textContent = String(Number(summary.supplierDebtCount || 0)) + " کۆمپانیا";
+            if (debtMeta) {
+                debtMeta.textContent = "کۆی قەرزی کڕیار · کۆمپانیا" +
+                    (meta.truncatedCustomers || meta.truncatedCompanies ? " · بەشێک لە لیست" : "");
+            }
+            debtCustomersCache = Array.isArray(data.customers) ? data.customers.slice() : [];
+            debtCompaniesCache = Array.isArray(data.companies) ? data.companies.slice() : [];
+            debtCustLedgerCache = Array.isArray(data.customerLedgerRecent) ? data.customerLedgerRecent : [];
+            debtCompLedgerCache = Array.isArray(data.companyLedgerRecent) ? data.companyLedgerRecent : [];
+            debtCustLedgerById = (data.customerLedgerById && typeof data.customerLedgerById === "object") ? data.customerLedgerById : {};
+            debtCompLedgerById = (data.companyLedgerById && typeof data.companyLedgerById === "object") ? data.companyLedgerById : {};
+            if (debtExpandedId) {
+                const still = (debtActiveTab === "customers" ? debtCustomersCache : debtCompaniesCache)
+                    .some(function (r) { return String(r.id) === debtExpandedId; });
+                if (!still) debtExpandedId = null;
+            }
+            refreshDebtView();
+            bindDebtFilters();
+        }
+
+        function bindDebt(channelId) {
+            if (unsubDebt) { unsubDebt(); unsubDebt = null; }
+            const debtContent = document.getElementById("debtContent");
+            if (!debtContent) return;
+            const dref = doc(db, "pos_mobile_debt", channelId);
+            unsubDebt = onSnapshot(dref, function (snap) {
+                applyDebtData(snap.exists() ? snap.data() : null);
+            }, function () {
+                debtContent.innerHTML = '<div class="detail-empty" style="color:#fca5a5;">نەتوانرا قەرز بخوێنرێتەوە — Firestore Rules.<br><br>' +
+                    '<strong>چارەسەر:</strong> Firebase Console → Firestore → Rules<br>' +
+                    '<code style="display:block;font-size:0.68rem;word-break:break-all;margin:8px 0;padding:8px;background:rgba(0,0,0,.2);border-radius:8px;">match /pos_mobile_debt/{channelId} {<br>&nbsp;&nbsp;allow read, write: if request.auth != null &amp;&amp; request.auth.token.email.lower() == channelId;<br>}</code>' +
+                    "پاشان Publish → لە POS sync بکە.</div>";
+            });
+        }
 
         function getInvStocktakeFilterDate() {
             if (invStDayMode === "all") return "";
@@ -1525,11 +1873,13 @@
             const invStocktakeHint = document.getElementById("invStocktakeHint");
             if (!invContent) return;
             if (!data) {
+                invDocSynced = false;
                 invContent.innerHTML = '<div class="detail-empty">هێشتا داتای کۆگە نییە.<br><br>لە POS: ڕێکخستن → Firebase sync چالاک بکە، پاشان Ctrl+F5.<br>دوای ≈١٢ چرکە یان دوای جەرد/فرۆشتن داتا دێت.<br><br><button type="button" class="btn-ghost" onclick="document.getElementById(\'refreshBtn\')&&document.getElementById(\'refreshBtn\').click()" style="margin-top:8px;width:100%;"><i class="fas fa-arrows-rotate"></i> Refresh</button></div>';
                 if (invMeta) invMeta.textContent = "کۆگە · جەرد";
                 if (invWhBadge) invWhBadge.classList.add("hidden");
                 return;
             }
+            invDocSynced = true;
             const summary = data.summary || {};
             const meta = data.meta || {};
             const products = Array.isArray(data.products) ? data.products : [];
@@ -1557,6 +1907,9 @@
             invRecentCache = recent;
             refreshInventoryView();
             bindInventoryFilters();
+            if (data.debtSnapshot && (data.debtSnapshot.summary || data.debtSnapshot.companies || data.debtSnapshot.customers)) {
+                applyDebtData(data.debtSnapshot);
+            }
         }
 
         function applyDetailData(data, dayKey) {
@@ -1624,11 +1977,13 @@
                 const snaps = await Promise.all([
                     getDocFromServer(doc(db, "pos_mobile_dashboard", activeChannelId)),
                     getDocFromServer(doc(db, "pos_mobile_inventory", activeChannelId)),
+                    getDocFromServer(doc(db, "pos_mobile_debt", activeChannelId)),
                     getDocFromServer(doc(db, "pos_mobile_daily_detail", activeChannelId, "days", dayKey))
                 ]);
                 applyDashboardData(snaps[0].exists() ? snaps[0].data() : null, { silent: true });
                 applyInventoryData(snaps[1].exists() ? snaps[1].data() : null);
-                applyDetailData(snaps[2].exists() ? snaps[2].data() : null, dayKey);
+                applyDebtData(snaps[2].exists() ? snaps[2].data() : null);
+                applyDetailData(snaps[3].exists() ? snaps[3].data() : null, dayKey);
                 setStatus("پەیوەست", true);
                 if (!opts.silent) showRefreshToast("داتا نوێکرایەوە ✓", false);
             } catch (e) {
@@ -1708,10 +2063,15 @@
         }
 
         async function doLogin() {
-            const email = (emailEl.value || "").trim();
+            const email = (emailEl.value || "").trim().toLowerCase();
             const password = passEl.value || "";
             if (!email || !password) {
                 authMsg.textContent = "ئیمێیل و تێپەڕەوشە بنووسە.";
+                return;
+            }
+            const domain = email.split("@")[1] || "";
+            if (!domain.includes(".") || domain === "0") {
+                authMsg.textContent = "ئیمێیل هەڵەیە («" + email + "»). دەبێت وەک hakar01@pos.laptopduhok.com بێت — لە کارتێکی دروستکراو بەکاربهێنە.";
                 return;
             }
             authMsg.textContent = "چاوەڕێ بکە…";
@@ -1747,10 +2107,13 @@
         if (tabHomeBtn) tabHomeBtn.addEventListener("click", () => switchMobileTab("home"));
         if (tabDashBtn) tabDashBtn.addEventListener("click", () => switchMobileTab("dash"));
         if (tabInvBtn) tabInvBtn.addEventListener("click", () => switchMobileTab("inv"));
+        if (tabDebtBtn) tabDebtBtn.addEventListener("click", () => switchMobileTab("debt"));
         const homeGoDash = document.getElementById("homeGoDash");
         const homeGoInv = document.getElementById("homeGoInv");
+        const homeGoDebt = document.getElementById("homeGoDebt");
         if (homeGoDash) homeGoDash.addEventListener("click", () => switchMobileTab("dash"));
         if (homeGoInv) homeGoInv.addEventListener("click", () => switchMobileTab("inv"));
+        if (homeGoDebt) homeGoDebt.addEventListener("click", () => switchMobileTab("debt"));
         document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
         const logoutBtnHome = document.getElementById("logoutBtnHome");
         if (logoutBtnHome) logoutBtnHome.addEventListener("click", () => signOut(auth));
@@ -1860,9 +2223,11 @@
                 if (unsub) { unsub(); unsub = null; }
                 if (unsubDetail) { unsubDetail(); unsubDetail = null; }
                 if (unsubInventory) { unsubInventory(); unsubInventory = null; }
+                if (unsubDebt) { unsubDebt(); unsubDebt = null; }
                 const detailCard = document.getElementById("detailCard");
                 if (detailCard) detailCard.classList.add("hidden");
                 if (panelInv) panelInv.classList.add("hidden");
+                if (panelDebt) panelDebt.classList.add("hidden");
                 if (panelHome) panelHome.classList.add("hidden");
                 if (bottomNav) bottomNav.classList.add("hidden");
                 authCard.classList.remove("hidden");
@@ -1877,13 +2242,14 @@
             const homeEmail = document.getElementById("homeEmail");
             if (homeEmail) homeEmail.textContent = user.email;
             const savedTab = (function () { try { return localStorage.getItem("pos_mobile_tab") || "home"; } catch (e) { return "home"; } })();
-            switchMobileTab(savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
+            switchMobileTab(savedTab === "debt" ? "debt" : savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
             const channelId = user.email.toLowerCase();
             activeChannelId = channelId;
             if (refreshBtn) refreshBtn.classList.remove("hidden");
             bindDashboard(channelId);
             bindDetail(channelId);
             bindInventory(channelId);
+            bindDebt(channelId);
         });
     </script>
 </body>

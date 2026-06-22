@@ -27,9 +27,14 @@ http://localhost/pos/public/mobile_manager/
 
 ئەم فۆڵدەرە (`mobile_app_github`) هەمان ناوەڕۆکی `public/mobile_manager/` ـە.
 
-1. Upload بۆ GitHub repo
+**لینکی دروست:**
+`https://hershkhald-lang.github.io/laptopduhok/mobile_app_github/`
+
+1. فایلەکانی ئەم فۆڵدەرە upload بکە بۆ GitHub repo (`mobile_app_github/`)
 2. Settings → Pages → branch `main`
-3. `username.github.io/repo-name` → Firebase Authorized domains زیاد بکە
+3. Firebase → Authorized domains: `hershkhald-lang.github.io`
+
+**دوای هەر نوێکردنەوە:** لە موبایل hard refresh (`Ctrl+Shift+R`) یان PWA لاببە و دووبارە زیاد بکە — service worker کاش دەکات.
 
 ## POS sync
 
