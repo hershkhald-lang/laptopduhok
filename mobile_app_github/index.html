@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="LD Manager" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="LD Manager" />
-    <title>Laptop Duhok POS — MOBILE APP v2.15.36</title>
+    <title>Laptop Duhok POS — MOBILE APP v2.15.37</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/icons/favicon-32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" sizes="180x180">
@@ -1056,10 +1056,15 @@
                 <div class="card">
                     <h2 class="section-title"><i class="fas fa-download" style="color:#a5b4fc"></i> پاشەکەوت (بێ پارە)</h2>
                     <p class="sub" style="margin:0;">لە POS: پاشەکەوتکردن (ZIP) · هەمان WiFi + PIN · ئێرە داونلۆد بکە بۆ مۆبایلەکەت</p>
-                    <div class="read-only-notice" style="margin-top:12px;">
-                        <i class="fas fa-shield-halved"></i>
-                        <span><strong>تەنها داونلۆد.</strong> گەڕاندنەوە لە لاپتۆپێکی نوێ + XAMPP دەکرێت — فایلەکە لە مۆبایل بپارێزە.</span>
+                    <div class="read-only-notice" style="margin-top:12px;background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.35);">
+                        <i class="fab fa-apple"></i>
+                        <span><strong>iPhone:</strong> داونلۆد لە Safari باشترە — «کردنەوە لە Safari» بگرە (github.io کار ناکات بۆ WiFi).</span>
                     </div>
+                    <div class="read-only-notice" style="margin-top:10px;">
+                        <i class="fas fa-shield-halved"></i>
+                        <span><strong>تەنها داونلۆد.</strong> گەڕاندنەوە لە لاپتۆپێکی نوێ + XAMPP — فایلەکە لە Files بپارێزە.</span>
+                    </div>
+                    <button type="button" id="mmOpenSafariBackupBtn" class="backup-dl-btn" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#0ea5e9,#6366f1);"><i class="fab fa-safari"></i> کردنەوە لە Safari (iPhone)</button>
                     <div class="mm-backup-form" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
                         <label style="font-size:0.78rem;color:var(--muted);">POS URL (WiFi)</label>
                         <input type="url" id="mmPosUrl" dir="ltr" placeholder="http://192.168.1.5/pos" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--input-bg);color:var(--text);" />
@@ -1243,52 +1248,55 @@
         let mmPosBaseCached = "";
         let mmPinCached = "";
 
+        function mmIsMixedLanBlocked(posBase) {
+            try {
+                const pos = new URL(posBase);
+                if (pos.protocol === "http:" && location.protocol === "https:") return true;
+            } catch (e) {}
+            return false;
+        }
+
+        function buildMmBackupPageUrl(posBase, pin, auto) {
+            const base = String(posBase || "").replace(/\/$/, "");
+            const q = "pos=" + encodeURIComponent(base) + "&pin=" + encodeURIComponent(pin || "");
+            return base + "/public/mobile_manager/backup.html?" + q + (auto ? "&auto=1" : "");
+        }
+
+        function openPosBackupPage(auto) {
+            const posBase = getMmPosBase();
+            const pin = getMmBackupPin();
+            if (!pin || pin.length < 4) {
+                alert("PIN بنووسە (2026 یان لە POS)");
+                return;
+            }
+            if (/localhost|127\.0\.0\.1/i.test(posBase)) {
+                alert("IPـی WiFiـی لاپتۆپ بنووسە — localhost لە موبایل کار ناکات");
+                return;
+            }
+            window.location.href = buildMmBackupPageUrl(posBase, pin, auto);
+        }
+
+        function buildMmDlUrl(name) {
+            return mmPosBaseCached + "/?action=mobile_download_backup&pin=" + encodeURIComponent(mmPinCached) + "&name=" + encodeURIComponent(name);
+        }
+
         function renderBackupList(items) {
             const box = document.getElementById("backupContent");
             if (!box) return;
             if (!items || !items.length) {
-                box.innerHTML = '<div class="detail-empty">backup ni ye.<br><small>POS: pashakewt (ZIP) yek jar.</small></div>';
+                box.innerHTML = '<div class="detail-empty">پاشەکەوت نییە.<br><small>لە POS: بەڕێوەبردنی داتابەیس → پاشەکەوتکردن</small></div>';
                 return;
             }
             mmBackupItems = items;
-            box.innerHTML = items.map(function (it, idx) {
+            box.innerHTML = items.map(function (it) {
                 const name = esc(it.name || "backup.zip");
                 const sub = (it.mtime_iso || formatBackupDate(it.mtime)) + " · " + formatBackupBytes(it.bytes);
+                const href = buildMmDlUrl(it.name || "backup.zip");
                 return '<div class="backup-row">' +
                     '<div class="backup-row-meta"><div class="backup-row-name">' + name + '</div><div class="backup-row-sub">' + sub + '</div></div>' +
-                    '<button type="button" class="backup-dl-btn" data-backup-idx="' + idx + '"><i class="fas fa-download"></i> داونلۆد</button>' +
+                    '<a class="backup-dl-btn" href="' + esc(href) + '" download="' + name + '" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-download"></i> داونلۆد</a>' +
                     '</div>';
             }).join("");
-            box.querySelectorAll(".backup-dl-btn").forEach(function (btn) {
-                btn.addEventListener("click", function () {
-                    const i = parseInt(btn.getAttribute("data-backup-idx"), 10);
-                    const it = mmBackupItems[i];
-                    if (!it || !it.name) return;
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                    const dlUrl = mmPosBaseCached + "/?action=mobile_download_backup&pin=" + encodeURIComponent(mmPinCached) + "&name=" + encodeURIComponent(it.name);
-                    fetch(dlUrl).then(function (res) {
-                        if (!res.ok) throw new Error("HTTP " + res.status);
-                        return res.blob();
-                    }).then(function (blob) {
-                        const obj = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = obj;
-                        a.download = it.name || "backup.zip";
-                        document.body.appendChild(a);
-                            a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(obj);
-                        btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-download"></i> داونلۆد';
-                        })
-                        .catch(function () {
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-download"></i> داونلۆد';
-                            alert("❌ نەتوانرا داونلۆد بکرێت — WiFi یان PIN بپشکنە.");
-                        });
-                });
-            });
         }
 
         function loadLanBackups() {
@@ -1301,6 +1309,10 @@
             }
             if (/localhost|127\.0\.0\.1/i.test(posBase)) {
                 if (box) box.innerHTML = '<div class="detail-empty" style="color:#fca5a5;">localhost لە موبایل کار ناکات.<br><small>IPـی WiFiـی لاپتۆپ بنووسە، وەک: http://192.168.1.5/pos</small></div>';
+                return;
+            }
+            if (mmIsMixedLanBlocked(posBase)) {
+                if (box) box.innerHTML = '<div class="detail-empty" style="color:#fcd34d;">github.io (HTTPS) ناتوانێت بە POS (HTTP) پەیوەند بکات.<br><small>«کردنەوە لە Safari» بگرە ↓</small></div>';
                 return;
             }
             mmPosBaseCached = posBase;
@@ -1337,15 +1349,28 @@
             const urlEl = document.getElementById("mmPosUrl");
             const pinEl = document.getElementById("mmBackupPin");
             const btn = document.getElementById("mmLoadBackupsBtn");
+            const safariBtn = document.getElementById("mmOpenSafariBackupBtn");
+            const qs = new URLSearchParams(location.search);
             if (urlEl && !urlEl.value) {
-                try { urlEl.value = localStorage.getItem("mm_pos_url") || guessPosApiBase(); } catch (e) { urlEl.value = guessPosApiBase(); }
+                const fromQs = qs.get("mm_pos") || qs.get("pos") || "";
+                try { urlEl.value = fromQs || localStorage.getItem("mm_pos_url") || guessPosApiBase(); } catch (e) { urlEl.value = fromQs || guessPosApiBase(); }
             }
             if (pinEl && !pinEl.value) {
-                try { pinEl.value = localStorage.getItem("mm_backup_pin") || ""; } catch (e) {}
+                const fromQs = qs.get("mm_pin") || qs.get("pin") || "";
+                try { pinEl.value = fromQs || localStorage.getItem("mm_backup_pin") || ""; } catch (e) { pinEl.value = fromQs || ""; }
             }
             if (btn && !btn.__mmBound) {
                 btn.__mmBound = true;
                 btn.addEventListener("click", loadLanBackups);
+            }
+            if (safariBtn && !safariBtn.__mmBound) {
+                safariBtn.__mmBound = true;
+                safariBtn.addEventListener("click", function () { openPosBackupPage(true); });
+            }
+            if (qs.get("mm_auto") === "1" || location.hash === "#backup") {
+                setTimeout(function () {
+                    if (getMmBackupPin().length >= 4) loadLanBackups();
+                }, 400);
             }
         }
 
