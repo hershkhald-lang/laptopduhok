@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="LD Manager" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="LD Manager" />
-    <title>Laptop Duhok POS — MOBILE APP v2.14.45</title>
+    <title>Laptop Duhok POS — MOBILE APP v2.14.99</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/brand/laptop-duhok-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/brand/laptop-duhok-logo.png">
@@ -601,6 +601,16 @@
             overflow: visible;
             padding-bottom: 4px;
         }
+        .inv-sub-tabs { margin: 0 0 10px; }
+        .mfr-row {
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid var(--line);
+        }
+        .mfr-row:last-child { border-bottom: none; }
+        .mfr-row-name { font-weight: 800; font-size: 0.92rem; }
+        .mfr-row-meta { font-size: 0.72rem; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+        .mfr-row-stats { text-align: left; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+        .mfr-row-stats strong { display: block; color: #a5b4fc; font-size: 0.95rem; }
         .debt-sub-tabs {
             display: flex; gap: 8px; margin-bottom: 10px;
         }
@@ -718,7 +728,7 @@
                 </div>
                 <div>
                     <p class="brand-title">Laptop Duhok POS</p>
-                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.14.45</span></p>
+                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.14.99</span></p>
                 </div>
             </div>
             <div class="topbar-actions">
@@ -809,7 +819,7 @@
                         <button type="button" class="home-tile tile-debt" id="homeGoDebt">
                             <i class="fas fa-scale-balanced"></i>
                             <strong>قەرز</strong>
-                            <small>کڕیار · کۆمپانیا (تەنها بینین)</small>
+                            <small>کڕیار · کڕین کۆمپانیا (تەنها بینین)</small>
                         </button>
                     </div>
                     <p class="home-foot" id="homeLastSync"><i class="fas fa-clock"></i> دوایین sync: —</p>
@@ -831,7 +841,7 @@
                         <h2 class="dash-title"><i class="fas fa-signal" style="color:var(--brand)"></i> داشبۆردی ئەمڕۆ</h2>
                         <div id="status" class="status"><i class="fas fa-circle-notch fa-spin"></i> پەیوەندی…</div>
                     </div>
-                    <p id="dashCurrencyHint" class="sub" style="margin:0 0 12px;font-size:0.72rem;color:var(--muted);"><i class="fas fa-coins"></i> هەموو بڕەکان بە دیناری عێراقی (د.ع) — POS دۆلار بێت یان دینار</p>
+                    <p id="dashCurrencyHint" class="sub" style="margin:0 0 12px;font-size:0.72rem;color:var(--muted);"><i class="fas fa-coins"></i> دراو: هەمان دراوێ POS (دینار یان دۆلار)</p>
 
                     <div class="kpi-featured">
                         <div class="label"><i class="fas fa-chart-line"></i> قازانجی خاو</div>
@@ -940,6 +950,11 @@
                         <input type="date" id="invStDatePick" aria-label="ڕۆژی جەرد">
                     </div>
 
+                    <div class="inv-sub-tabs debt-sub-tabs" role="tablist">
+                        <button type="button" class="debt-sub-tab active" id="invTabProducts" data-inv-tab="products"><i class="fas fa-box"></i> ئایتمەکان</button>
+                        <button type="button" class="debt-sub-tab suppliers" id="invTabManufacturers" data-inv-tab="manufacturers"><i class="fas fa-industry"></i> کۆمپانیا دروستکەر</button>
+                    </div>
+
                     <div id="inventoryContent" class="inv-scroll-area">
                         <div class="detail-empty">چاوەڕێی داتا…</div>
                     </div>
@@ -949,7 +964,7 @@
                 <div id="panelDebt" class="app-panel panel-inv-compact hidden">
                 <div id="debtCard" class="card">
                     <h2 class="section-title"><i class="fas fa-scale-balanced" style="color:#fbbf24"></i> قەرز</h2>
-                    <p class="sub" id="debtMeta" style="margin:0;">کڕیار · کۆمپانیا</p>
+                    <p class="sub" id="debtMeta" style="margin:0;">کڕیار · کڕین کۆمپانیا</p>
                     <div class="read-only-notice">
                         <i class="fas fa-shield-halved"></i>
                         <span><strong>تەنها بینین.</strong> پارەدان و گۆڕانکاری لە POS دەمێنێت — موبایل هیچ ژمارەیەک ناگۆڕێت.</span>
@@ -966,17 +981,17 @@
                         </div>
                         <div class="kpi kpi-debt-sup">
                             <div class="head">
-                                <div class="label">قەرزی کۆمپانیا</div>
-                                <div class="icon"><i class="fas fa-building"></i></div>
+                                <div class="label">قەرزی کڕین کۆمپانیا</div>
+                                <div class="icon"><i class="fas fa-truck-field"></i></div>
                             </div>
                             <div id="debtSupTotal" class="val">0</div>
-                            <div class="hint" id="debtSupCount">0 کۆمپانیا</div>
+                            <div class="hint" id="debtSupCount">0 کڕین کۆمپانیا</div>
                         </div>
                     </div>
 
                     <div class="debt-sub-tabs" role="tablist">
                         <button type="button" class="debt-sub-tab active" id="debtTabCustomers" data-debt-tab="customers">کڕیار</button>
-                        <button type="button" class="debt-sub-tab suppliers" id="debtTabCompanies" data-debt-tab="companies">کۆمپانیا</button>
+                        <button type="button" class="debt-sub-tab suppliers" id="debtTabCompanies" data-debt-tab="companies">کڕین کۆمپانیا</button>
                     </div>
 
                     <div id="debtContent" class="debt-scroll-area">
@@ -1125,25 +1140,79 @@
             return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number.isFinite(n) ? n : 0);
         }
 
-        function formatMoneyIqd(v) {
-            return formatMoney(v) + " د.ع";
+        let mobileAmountMeta = { amountCurrency: "IQD", posDisplayCurrency: "IQD", syncVersion: 3, usdRatePerOne: 0 };
+
+        function getMobileDisplayCurrency() {
+            var m = String(mobileAmountMeta.posDisplayCurrency || mobileAmountMeta.amountCurrency || "").toUpperCase();
+            if (m === "USD" || m === "IQD") return m;
+            try {
+                var ls = localStorage.getItem("pos_currency_mode");
+                if (ls === "USD" || ls === "IQD") return ls;
+            } catch (e) {}
+            return "IQD";
         }
 
-        let mobileAmountMeta = { amountCurrency: "IQD", syncVersion: 3 };
-
-        function setMobileAmountMeta(src) {
-            if (!src) return;
-            var meta = src.meta || src;
-            mobileAmountMeta = {
-                amountCurrency: src.amountCurrency || meta.amountCurrency || "IQD",
-                posDisplayCurrency: src.posDisplayCurrency || meta.posDisplayCurrency || "IQD",
-                syncVersion: Number(src.syncVersion != null ? src.syncVersion : (meta.v != null ? meta.v : 3)),
-                usdRatePerOne: Number(src.usdRatePerOne || meta.usdRatePerOne || 0)
-            };
+        function getMobileUsdRatePerOne() {
+            var r = Number(mobileAmountMeta.usdRatePerOne || 0);
+            if (r > 0 && r < 10000) return r;
+            if (r >= 10000) return r / 100;
+            try {
+                var bundle = parseInt(localStorage.getItem("pos_usd_rate") || "", 10);
+                if (bundle >= 10000) return bundle / 100;
+            } catch (e) {}
+            return 1500;
         }
 
         function normalizeMobileIqd(val) {
             return Math.round(Number(val) || 0);
+        }
+
+        function iqdToMobileDisplay(iqd) {
+            var n = normalizeMobileIqd(iqd);
+            if (getMobileDisplayCurrency() !== "USD") return n;
+            var rate = getMobileUsdRatePerOne();
+            if (!rate || rate <= 0) return n;
+            return Math.round((n / rate) * 100) / 100;
+        }
+
+        function formatMobileMoney(iqdStored) {
+            if (getMobileDisplayCurrency() === "USD") {
+                var usd = iqdToMobileDisplay(iqdStored);
+                var fmt = new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(usd);
+                return "$" + fmt;
+            }
+            return formatMoney(normalizeMobileIqd(iqdStored)) + " د.ع";
+        }
+
+        function formatMoneyIqd(v) {
+            return formatMobileMoney(v);
+        }
+
+        function updateMobileCurrencyHint() {
+            var el = document.getElementById("dashCurrencyHint");
+            if (!el) return;
+            if (getMobileDisplayCurrency() === "USD") {
+                el.innerHTML = '<i class="fas fa-coins"></i> هەموو بڕەکان بە <strong>دۆلار ($)</strong> — هەمان دراوێ POS';
+            } else {
+                el.innerHTML = '<i class="fas fa-coins"></i> هەموو بڕەکان بە <strong>دینار (د.ع)</strong> — هەمان دراوێ POS';
+            }
+        }
+
+        function setMobileAmountMeta(src) {
+            if (!src) return;
+            var meta = src.meta || src;
+            var prevCur = getMobileDisplayCurrency();
+            mobileAmountMeta = {
+                amountCurrency: src.amountCurrency || meta.amountCurrency || "IQD",
+                posDisplayCurrency: src.posDisplayCurrency || meta.posDisplayCurrency || meta.amountCurrency || "IQD",
+                syncVersion: Number(src.syncVersion != null ? src.syncVersion : (meta.v != null ? meta.v : 3)),
+                usdRatePerOne: Number(src.usdRatePerOne || meta.usdRatePerOne || 0)
+            };
+            updateMobileCurrencyHint();
+            if (getMobileDisplayCurrency() !== prevCur) {
+                if (debtDocSynced && typeof refreshDebtView === "function") refreshDebtView();
+                if (invDocSynced && typeof refreshInventoryView === "function") refreshInventoryView();
+            }
         }
 
         function groupSaleLineItems(items) {
@@ -1200,6 +1269,8 @@
         let invRecentCache = [];
         let invSearchText = "";
         let invCatFilter = "";
+        let invActiveTab = "products";
+        let invSubTabsBound = false;
         let invChannelId = "";
         let invFiltersBound = false;
         let invScannerActive = false;
@@ -1259,7 +1330,7 @@
                     esc(debtLedgerTypeLabel(e.type)) +
                     (e.note ? " · " + esc(e.note) : "") +
                     '<br><small style="color:var(--muted)">' + esc(e.date || "") + "</small></span>" +
-                    '<span class="amt">' + formatMoney(amt) + "</span></div>";
+                    '<span class="amt">' + formatMobileMoney(amt) + "</span></div>";
             });
             html += "</div>";
             return html;
@@ -1272,13 +1343,13 @@
             const limit = Number(r.debtLimit) || 0;
             const opening = Number(r.openingBalance) || 0;
             let html = '<div class="debt-detail-grid">' +
-                '<div><span>قەرزی ئێستا</span><strong>' + formatMoney(Number(r.balance) || 0) + " د.ع</strong></div>" +
-                '<div><span>سنووری قەرز</span><strong>' + (limit > 0 ? formatMoney(limit) + " د.ع" : "—") + "</strong></div>" +
-                '<div><span>قەرزی سەرەتایی</span><strong>' + formatMoney(opening) + " د.ع</strong></div>" +
+                '<div><span>قەرزی ئێستا</span><strong>' + formatMobileMoney(Number(r.balance) || 0) + "</strong></div>" +
+                '<div><span>سنووری قەرز</span><strong>' + (limit > 0 ? formatMobileMoney(limit) : "—") + "</strong></div>" +
+                '<div><span>قەرزی سەرەتایی</span><strong>' + formatMobileMoney(opening) + "</strong></div>" +
                 '<div><span>ژمارە</span><strong>#' + esc(idKey) + "</strong></div>" +
                 "</div>";
             html += '<div class="detail-h expenses" style="margin:6px 0 4px;font-size:0.72rem;"><i class="fas fa-list"></i> مێژووی قەرز</div>';
-            html += renderDebtLedgerMini(entries, "هیچ تۆمارێک نییە بۆ ئەم " + (isCust ? "کڕیارە" : "کۆمپانیایە") + ".");
+            html += renderDebtLedgerMini(entries, "هیچ تۆمارێک نییە بۆ ئەم " + (isCust ? "کڕیارە" : "کڕین کۆمپانیایە") + ".");
             return html;
         }
 
@@ -1289,7 +1360,7 @@
                 '<input type="search" id="debtSearchIn" class="inv-search" placeholder="گەڕان: ناو، تەلەفۆن…" value="' + esc(debtSearchText) + '" inputmode="search" autocomplete="off" style="width:100%;">' +
                 "</div>";
             if (!rows.length) {
-                html += '<div class="detail-empty">' + (isCust ? "هیچ قەرزی کڕیار نییە." : "هیچ قەرزی کۆمپانیا نییە.") + "</div>";
+                html += '<div class="detail-empty">' + (isCust ? "هیچ قەرزی کڕیار نییە." : "هیچ قەرزی کڕین کۆمپانیا نییە.") + "</div>";
                 const ledger = isCust ? debtCustLedgerCache : debtCompLedgerCache;
                 if (ledger.length) {
                     html += '<div class="inv-section"><div class="detail-h expenses"><i class="fas fa-clock-rotate-left"></i> دوایین جووڵەکان (گشتی)</div>';
@@ -1306,8 +1377,8 @@
                 const idKey = String(r.id);
                 const expanded = debtExpandedId === idKey;
                 const limit = Number(r.debtLimit) || 0;
-                const metaExtra = (limit > 0 ? ('<div class="debt-row-meta">سنوور: ' + formatMoney(limit) + " د.ع</div>") : "");
-                const entityLabel = isCust ? "ناوی کڕیار" : "ناوی کۆمپانیا";
+                const metaExtra = (limit > 0 ? ('<div class="debt-row-meta">سنوور: ' + formatMobileMoney(limit) + "</div>") : "");
+                const entityLabel = isCust ? "ناوی کڕیار" : "ناوی کڕین کۆمپانیا";
                 html += '<div class="debt-row' + (expanded ? " expanded" : "") + '" data-debt-id="' + esc(idKey) + '">' +
                     '<div class="debt-row-head">' +
                     '<div class="debt-row-name-block">' +
@@ -1317,7 +1388,7 @@
                     (expanded ? "شاردنەوە" : "وردەکاری") + "</div></div>" +
                     '<div class="debt-row-amt-block">' +
                     '<span class="debt-entity-label">قەرز</span>' +
-                    '<div class="debt-row-amt ' + amtCls + '">' + formatMoney(Math.abs(bal)) + " د.ع</div></div></div>";
+                    '<div class="debt-row-amt ' + amtCls + '">' + formatMobileMoney(Math.abs(bal)) + "</div></div></div>";
                 if (expanded) {
                     html += '<div class="debt-row-detail">' + renderDebtRowDetail(r, isCust) + "</div>";
                 }
@@ -1395,11 +1466,11 @@
                 }
                 debtContent.innerHTML = '<div class="detail-empty">هێشتا داتای قەرز لە Firebase نییە.<br><br>' + hint +
                     '<br><br><button type="button" class="btn-ghost" onclick="document.getElementById(\'refreshBtn\')&&document.getElementById(\'refreshBtn\').click()" style="margin-top:8px;width:100%;"><i class="fas fa-arrows-rotate"></i> Refresh</button></div>';
-                if (debtMeta) debtMeta.textContent = "کڕیار · کۆمپانیا";
+                if (debtMeta) debtMeta.textContent = "کڕیار · کڕین کۆمپانیا";
                 if (debtCustTotal) debtCustTotal.textContent = "0";
                 if (debtSupTotal) debtSupTotal.textContent = "0";
                 if (debtCustCount) debtCustCount.textContent = "0 کڕیار";
-                if (debtSupCount) debtSupCount.textContent = "0 کۆمپانیا";
+                if (debtSupCount) debtSupCount.textContent = "0 کڕین کۆمپانیا";
                 return;
             }
             debtDocSynced = true;
@@ -1409,9 +1480,9 @@
             if (debtCustTotal) debtCustTotal.textContent = formatMoneyIqd(normalizeMobileIqd(summary.customerReceivables || 0));
             if (debtSupTotal) debtSupTotal.textContent = formatMoneyIqd(normalizeMobileIqd(summary.supplierPayables || 0));
             if (debtCustCount) debtCustCount.textContent = String(Number(summary.customerDebtorCount || 0)) + " کڕیار";
-            if (debtSupCount) debtSupCount.textContent = String(Number(summary.supplierDebtCount || 0)) + " کۆمپانیا";
+            if (debtSupCount) debtSupCount.textContent = String(Number(summary.supplierDebtCount || 0)) + " کڕین کۆمپانیا";
             if (debtMeta) {
-                debtMeta.textContent = "کۆی قەرزی کڕیار · کۆمپانیا" +
+                debtMeta.textContent = "کۆی قەرزی کڕیار · کڕین کۆمپانیا" +
                     (meta.truncatedCustomers || meta.truncatedCompanies ? " · بەشێک لە لیست" : "");
             }
             debtCustomersCache = Array.isArray(data.customers) ? data.customers.slice() : [];
@@ -1589,7 +1660,7 @@
             }
 
             html += '<div class="inv-table-wrap"><table class="inv-table"><thead><tr>' +
-                "<th>بارکۆد</th><th>ناو</th><th>پۆل</th><th>کۆمپانیا</th>" +
+                "<th>بارکۆد</th><th>ناو</th><th>پۆل</th><th>کۆمپانیا دروستکەر</th>" +
                 "<th>تێچوو</th><th>نرخ</th><th>ژمارە</th><th>کەمترین</th><th>بەسەرچوون</th><th>دۆخ</th>" +
                 "</tr></thead><tbody>";
 
@@ -1652,9 +1723,88 @@
             return html;
         }
 
+        function buildManufacturerSummary(products) {
+            const map = Object.create(null);
+            (products || []).forEach(function (p) {
+                const raw = String(p.manufacturer || "").trim();
+                const key = raw || "__none__";
+                if (!map[key]) {
+                    map[key] = {
+                        name: raw || "بێ کۆمپانیا دروستکەر",
+                        products: 0,
+                        qty: 0,
+                        low: 0,
+                        out: 0
+                    };
+                }
+                map[key].products += 1;
+                map[key].qty += Number(p.qty) || 0;
+                if (p.status === "out") map[key].out += 1;
+                else if (p.status === "low") map[key].low += 1;
+            });
+            return Object.values(map).sort(function (a, b) {
+                return String(a.name).localeCompare(String(b.name), "ku", { sensitivity: "base" });
+            });
+        }
+
+        function manufacturerMatchesSearch(row, term) {
+            const raw = String(term || "").trim();
+            if (!raw) return true;
+            return String(row.name || "").toLowerCase().indexOf(raw.toLowerCase()) >= 0;
+        }
+
+        function renderManufacturersSection(products, filterText) {
+            const rows = buildManufacturerSummary(products).filter(function (r) {
+                return manufacturerMatchesSearch(r, filterText);
+            });
+            let html = '<div class="inv-list-title"><i class="fas fa-industry"></i> کۆمپانیا دروستکەر · ' + rows.length + "</div>";
+            html += '<p class="sub" style="margin:0 0 8px;font-size:0.74rem;color:var(--muted);">جیا لە <strong>کڕین کۆمپانیا</strong> (قەرزی دابینکەر) — ئەمە ناوی دروستکەری کاڵایە.</p>';
+            html += '<div class="inv-toolbar">' +
+                '<input type="search" id="invSearchIn" class="inv-search" placeholder="گەڕان: کۆمپانیا دروستکەر…" value="' + esc(filterText || "") + '" inputmode="search" autocomplete="off" style="min-width:100%;">' +
+                "</div>";
+            if (!rows.length) {
+                html += '<div class="detail-empty">هیچ کۆمپانیایەکی دروستکەر نەدۆزرایەوە.</div>';
+                return html;
+            }
+            html += '<div class="inv-section">';
+            rows.forEach(function (r) {
+                html += '<div class="mfr-row"><div><div class="mfr-row-name">' + esc(r.name) + '</div><div class="mfr-row-meta">' +
+                    String(r.products) + " ئایتم · لە کۆگەدا " + formatQty(r.qty) +
+                    (r.low ? (" · <span style=\"color:#fbbf24\">" + r.low + " کەم</span>") : "") +
+                    (r.out ? (" · <span style=\"color:#f87171\">" + r.out + " نەما</span>") : "") +
+                    "</div></div><div class=\"mfr-row-stats\"><strong>" + String(r.products) + "</strong>ئایتم</div></div>";
+            });
+            html += "</div>";
+            return html;
+        }
+
+        function setInvSubTab(which) {
+            invActiveTab = which === "manufacturers" ? "manufacturers" : "products";
+            const tp = document.getElementById("invTabProducts");
+            const tm = document.getElementById("invTabManufacturers");
+            const dateRow = document.getElementById("invDateRow");
+            if (tp) tp.classList.toggle("active", invActiveTab === "products");
+            if (tm) tm.classList.toggle("active", invActiveTab === "manufacturers");
+            if (dateRow) dateRow.style.display = invActiveTab === "products" ? "" : "none";
+            refreshInventoryView();
+        }
+
+        function bindInvSubTabs() {
+            if (invSubTabsBound) return;
+            invSubTabsBound = true;
+            const tp = document.getElementById("invTabProducts");
+            const tm = document.getElementById("invTabManufacturers");
+            if (tp) tp.addEventListener("click", function () { setInvSubTab("products"); });
+            if (tm) tm.addEventListener("click", function () { setInvSubTab("manufacturers"); });
+        }
+
         function refreshInventoryView() {
             const invContent = document.getElementById("inventoryContent");
             if (!invContent) return;
+            if (invActiveTab === "manufacturers") {
+                invContent.innerHTML = renderManufacturersSection(invProductsCache, invSearchText);
+                return;
+            }
             invContent.innerHTML =
                 renderInventoryTable(invProductsCache, invSearchText, invCatFilter) +
                 renderStocktakeSections(invSessionsCache, invRecentCache);
@@ -1882,16 +2032,16 @@
             opts = opts || {};
             setMobileAmountMeta(d);
             if (!d) {
-                kpiSales.textContent = "0 د.ع";
-                kpiExpenses.textContent = "0 د.ع";
-                kpiNet.textContent = "0 د.ع";
+                kpiSales.textContent = formatMobileMoney(0);
+                kpiExpenses.textContent = formatMobileMoney(0);
+                kpiNet.textContent = formatMobileMoney(0);
                 kpiInvoices.textContent = "0";
                 metaEl.innerHTML = '<i class="fas fa-clock"></i> دوایین نوێکردنەوە: هێشتا داتا نییە';
                 updateHomeSyncText("دوایین sync: هێشتا داتا نییە");
                 const hNet0 = document.getElementById("homeNet");
                 const hSales0 = document.getElementById("homeSales");
-                if (hNet0) hNet0.textContent = "0 د.ع";
-                if (hSales0) hSales0.textContent = "0 د.ع";
+                if (hNet0) hNet0.textContent = formatMobileMoney(0);
+                if (hSales0) hSales0.textContent = formatMobileMoney(0);
                 if (!opts.silent) setStatus("چاوەڕێی یەکەم sync", false);
                 return;
             }
@@ -1957,6 +2107,7 @@
             invRecentCache = recent;
             refreshInventoryView();
             bindInventoryFilters();
+            bindInvSubTabs();
             if (data.debtSnapshot && (data.debtSnapshot.summary || data.debtSnapshot.companies || data.debtSnapshot.customers)) {
                 applyDebtData(data.debtSnapshot);
             }
