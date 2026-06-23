@@ -1,11 +1,15 @@
 /**
  * PWA service worker — Mobile Manager (public/mobile_manager/)
  */
-const CACHE_NAME = "ld-manager-pwa-v14";
+const CACHE_NAME = "ld-manager-pwa-v17";
 const SHELL = [
     "./index.html",
     "./manifest.json",
-    "./assets/brand/laptop-duhok-logo.png"
+    "./assets/brand/laptop-duhok-logo.png",
+    "./assets/icons/icon-192.png",
+    "./assets/icons/icon-512.png",
+    "./assets/icons/apple-touch-icon.png",
+    "./assets/icons/favicon-32.png"
 ];
 
 self.addEventListener("install", function (event) {

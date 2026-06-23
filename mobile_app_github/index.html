@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="LD Manager" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="LD Manager" />
-    <title>Laptop Duhok POS — MOBILE APP v2.15.25</title>
+    <title>Laptop Duhok POS — MOBILE APP v2.15.36</title>
     <link rel="manifest" href="manifest.json" />
-    <link rel="icon" href="assets/brand/laptop-duhok-logo.png" type="image/png">
-    <link rel="apple-touch-icon" href="assets/brand/laptop-duhok-logo.png">
+    <link rel="icon" href="assets/icons/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" sizes="180x180">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         :root {
@@ -186,8 +186,23 @@
         .home-tile.tile-dash i { color: #60a5fa; }
         .home-tile.tile-inv { border-color: rgba(16,185,129,.35); background: linear-gradient(160deg, rgba(16,185,129,.1), var(--surface-2)); }
         .home-tile.tile-inv i { color: #34d399; }
-        .home-tile.tile-debt { border-color: rgba(245,158,11,.35); background: linear-gradient(160deg, rgba(245,158,11,.1), var(--surface-2)); grid-column: span 2; }
+        .home-tile.tile-debt { border-color: rgba(245,158,11,.35); background: linear-gradient(160deg, rgba(245,158,11,.1), var(--surface-2)); }
         .home-tile.tile-debt i { color: #fbbf24; }
+        .home-tile.tile-backup { border-color: rgba(99,102,241,.35); background: linear-gradient(160deg, rgba(99,102,241,.12), var(--surface-2)); grid-column: span 2; }
+        .home-tile.tile-backup i { color: #a5b4fc; }
+        .backup-scroll-area { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; max-height: 55vh; overflow-y: auto; }
+        .backup-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2);
+        }
+        .backup-row-meta { min-width: 0; flex: 1; }
+        .backup-row-name { font-size: 0.78rem; font-weight: 700; word-break: break-all; }
+        .backup-row-sub { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+        .backup-dl-btn {
+            flex-shrink: 0; border: none; border-radius: 12px; padding: 10px 12px;
+            background: linear-gradient(135deg, #6366f1, #3b82f6); color: #fff; font-weight: 700; font-size: 0.75rem; cursor: pointer;
+        }
+        .backup-dl-btn:disabled { opacity: 0.55; cursor: wait; }
         .home-foot { margin-top: 14px; font-size: 0.76rem; color: var(--muted); text-align: center; }
         .install-card {
             margin-top: 14px; padding: 14px; border-radius: var(--radius-sm);
@@ -206,6 +221,38 @@
             border: 0; border-radius: var(--radius-sm); color: #fff;
             font-weight: 800; font-size: 0.9rem; cursor: pointer;
             box-shadow: 0 10px 24px rgba(14, 165, 233, 0.35);
+        }
+        .mm-install-bar {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(var(--mm-nav-h) + 8px);
+            width: calc(100% - 24px);
+            max-width: 456px;
+            z-index: 70;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(14, 165, 233, 0.45);
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.95), rgba(99, 102, 241, 0.95));
+            color: #fff;
+            box-shadow: 0 12px 32px rgba(14, 165, 233, 0.35);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mm-install-bar.hidden { display: none !important; }
+        .mm-install-bar-text { flex: 1; font-size: 0.78rem; line-height: 1.45; font-weight: 700; }
+        .mm-install-bar-btn {
+            flex: 0 0 auto;
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: #fff;
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: 0.78rem;
+            cursor: pointer;
+            white-space: nowrap;
         }
         .hidden { display: none !important; }
 
@@ -723,12 +770,12 @@
         <header class="app-topbar">
             <div class="brand-block">
                 <div class="brand-logo-wrap">
-                    <img class="brand-logo" src="assets/brand/laptop-duhok-logo.png" alt="Laptop Duhok" onerror="this.style.display='none'; this.nextElementSibling.classList.add('is-visible');">
+                    <img class="brand-logo" src="assets/brand/laptop-duhok-logo.png" alt="Laptop Duhok" onerror="this.onerror=null;this.src='assets/icons/icon-192.png';">
                     <div class="brand-icon" aria-hidden="true"><i class="fas fa-mobile-screen-button"></i></div>
                 </div>
                 <div>
                     <p class="brand-title">Laptop Duhok POS</p>
-                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.15.25</span></p>
+                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.15.31</span></p>
                 </div>
             </div>
             <div class="topbar-actions">
@@ -746,7 +793,7 @@
         <div class="container">
             <div id="authCard" class="card auth-wrap">
                 <div class="auth-hero">
-                    <img class="auth-hero-logo" src="assets/brand/laptop-duhok-logo.png" alt="Laptop Duhok" onerror="this.style.display='none'; this.nextElementSibling.classList.add('is-visible');">
+                    <img class="auth-hero-logo" src="assets/brand/laptop-duhok-logo.png" alt="Laptop Duhok" onerror="this.onerror=null;this.src='assets/icons/icon-192.png';">
                     <div class="brand-icon" aria-hidden="true"><i class="fas fa-chart-pie"></i></div>
                     <h1 class="title">بەڕێوەبەری موبایل</h1>
                     <p class="sub">فرۆشتن · کۆگە · جەرد · sync لە ≈١٢ چرکە</p>
@@ -783,7 +830,7 @@
                 <div id="panelHome" class="app-panel">
                 <div class="card">
                     <div class="home-hero">
-                        <img class="home-hero-logo" src="assets/brand/laptop-duhok-logo.png" alt="Laptop Duhok">
+                        <img class="home-hero-logo" src="assets/brand/laptop-duhok-logo.png" alt="Laptop Duhok" onerror="this.onerror=null;this.src='assets/icons/icon-192.png';">
                         <h2 class="home-welcome">بەخێر بێیت</h2>
                         <p class="home-email" id="homeEmail">—</p>
                     </div>
@@ -820,6 +867,11 @@
                             <i class="fas fa-scale-balanced"></i>
                             <strong>قەرز</strong>
                             <small>کڕیار · کڕین کۆمپانیا (تەنها بینین)</small>
+                        </button>
+                        <button type="button" class="home-tile tile-backup" id="homeGoBackup">
+                            <i class="fas fa-cloud-arrow-down"></i>
+                            <strong>پاشەکەوت</strong>
+                            <small>داونلۆدی ZIP لە Cloud (ئەگەر لاپتۆپ سوت)</small>
                         </button>
                     </div>
                     <p class="home-foot" id="homeLastSync"><i class="fas fa-clock"></i> دوایین sync: —</p>
@@ -999,6 +1051,20 @@
                     </div>
                 </div>
                 </div>
+
+                <div id="panelBackup" class="app-panel hidden">
+                <div class="card">
+                    <h2 class="section-title"><i class="fas fa-cloud-arrow-down" style="color:#a5b4fc"></i> پاشەکەوت (Cloud)</h2>
+                    <p class="sub" style="margin:0;">لە POS: پاشەکەوتکردن (ZIP) + Firebase پەیوەست · ئێرە داونلۆد بکە بۆ مۆبایلەکەت</p>
+                    <div class="read-only-notice" style="margin-top:12px;">
+                        <i class="fas fa-shield-halved"></i>
+                        <span><strong>تەنها داونلۆد.</strong> گەڕاندنەوە لە لاپتۆپێکی نوێ + XAMPP دەکرێت — فایلەکە لە مۆبایل بپارێزە.</span>
+                    </div>
+                    <div id="backupContent" class="backup-scroll-area">
+                        <div class="detail-empty">چاوەڕێی لیست…</div>
+                    </div>
+                </div>
+                </div>
             </div>
         </div>
 
@@ -1020,6 +1086,11 @@
                 <span>قەرز</span>
             </button>
         </nav>
+
+        <div id="mmInstallBar" class="mm-install-bar hidden" role="region" aria-label="دامەزراندنی ئەپ">
+            <div class="mm-install-bar-text"><i class="fas fa-download"></i> ئەپ لە سەر شاشەی مۆبایل دابمەزرێنە</div>
+            <button type="button" id="mmInstallBarBtn" class="mm-install-bar-btn">دامەزراندن</button>
+        </div>
 
         <div id="invScannerModal" class="inv-scanner-modal hidden" aria-hidden="true">
             <div class="inv-scanner-panel">
@@ -1054,6 +1125,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, getDocFromServer } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+        import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
         const firebaseConfig = window.POS_FIREBASE_CONFIG || {};
         if (!firebaseConfig.apiKey) {
@@ -1065,6 +1137,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
         const authCard = document.getElementById("authCard");
         const dashboard = document.getElementById("dashboard");
@@ -1081,6 +1154,7 @@
         let unsubDetail = null;
         let unsubInventory = null;
         let unsubDebt = null;
+        let unsubBackup = null;
         let activeChannelId = "";
         let refreshBusy = false;
         const refreshBtn = document.getElementById("refreshBtn");
@@ -1091,6 +1165,7 @@
         const panelDash = document.getElementById("panelDash");
         const panelInv = document.getElementById("panelInv");
         const panelDebt = document.getElementById("panelDebt");
+        const panelBackup = document.getElementById("panelBackup");
         const bottomNav = document.getElementById("bottomNav");
         const tabHomeBtn = document.getElementById("tabHome");
         const tabDashBtn = document.getElementById("tabDash");
@@ -1104,17 +1179,133 @@
         }
 
         function switchMobileTab(tab) {
-            const t = tab === "debt" ? "debt" : tab === "inv" ? "inv" : tab === "dash" ? "dash" : "home";
+            const t = tab === "backup" ? "backup" : tab === "debt" ? "debt" : tab === "inv" ? "inv" : tab === "dash" ? "dash" : "home";
             if (panelHome) panelHome.classList.toggle("hidden", t !== "home");
             if (panelDash) panelDash.classList.toggle("hidden", t !== "dash");
             if (panelInv) panelInv.classList.toggle("hidden", t !== "inv");
             if (panelDebt) panelDebt.classList.toggle("hidden", t !== "debt");
+            if (panelBackup) panelBackup.classList.toggle("hidden", t !== "backup");
             setTabActive(tabHomeBtn, t === "home");
             setTabActive(tabDashBtn, t === "dash");
             setTabActive(tabInvBtn, t === "inv");
             setTabActive(tabDebtBtn, t === "debt");
             try { localStorage.setItem("pos_mobile_tab", t); } catch (e) {}
             window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function formatBackupBytes(n) {
+            n = Number(n) || 0;
+            if (n < 1024) return n + " B";
+            if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+            return (n / 1048576).toFixed(1) + " MB";
+        }
+
+        function formatBackupDate(ms) {
+            if (!ms) return "—";
+            try {
+                return new Date(ms).toLocaleString("ar-IQ", {
+                    year: "numeric", month: "short", day: "numeric",
+                    hour: "2-digit", minute: "2-digit", hour12: false
+                });
+            } catch (e) { return "—"; }
+        }
+
+        function renderBackupList(items) {
+            const box = document.getElementById("backupContent");
+            if (!box) return;
+            if (!items || !items.length) {
+                box.innerHTML = '<div class="detail-empty">هێشتا backup لە Cloud نییە.<br><small>لە POS: Settings → پاشەکەوتکردن (ZIP) + Firebase پەیوەست بکە.</small></div>';
+                return;
+            }
+            box.innerHTML = items.map(function (it, idx) {
+                const name = esc(it.name || "backup.zip");
+                const sub = formatBackupDate(it.createdAt) + " · " + formatBackupBytes(it.bytes);
+                return '<div class="backup-row">' +
+                    '<div class="backup-row-meta"><div class="backup-row-name">' + name + '</div><div class="backup-row-sub">' + sub + '</div></div>' +
+                    '<button type="button" class="backup-dl-btn" data-backup-idx="' + idx + '"><i class="fas fa-download"></i> داونلۆد</button>' +
+                    '</div>';
+            }).join("");
+            box.querySelectorAll(".backup-dl-btn").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    const i = parseInt(btn.getAttribute("data-backup-idx"), 10);
+                    const it = items[i];
+                    if (!it || !it.storagePath) return;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    getDownloadURL(storageRef(storage, it.storagePath))
+                        .then(function (url) {
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = it.name || "backup.zip";
+                            a.rel = "noopener";
+                            a.target = "_blank";
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-download"></i> داونلۆد';
+                        })
+                        .catch(function () {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-download"></i> داونلۆد';
+                            alert("❌ نەتوانرا داونلۆد بکرێت — Storage Rules یان ئینتەرنێت بپشکنە.");
+                        });
+                });
+            });
+        }
+
+        function bindBackups(channelId) {
+            if (unsubBackup) { unsubBackup(); unsubBackup = null; }
+            const bref = doc(db, "pos_mobile_backups", channelId);
+            unsubBackup = onSnapshot(bref, function (snap) {
+                const data = snap.exists() ? snap.data() : null;
+                const items = (data && data.items) ? data.items.slice().sort(function (a, b) {
+                    return (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0);
+                }) : [];
+                renderBackupList(items);
+            }, function (err) {
+                const box = document.getElementById("backupContent");
+                if (!box) return;
+                const isPerm = err && (err.code === "permission-denied" || String(err.message || "").toLowerCase().indexOf("permission") !== -1);
+                const firestoreBlock = [
+                    "    match /pos_mobile_backups/{channelId} {",
+                    "      allow read, write: if isChannelOwner(channelId);",
+                    "    }"
+                ].join("\n");
+                const storageBlock = [
+                    "rules_version = '2';",
+                    "service firebase.storage {",
+                    "  match /b/{bucket}/o {",
+                    "    function isChannelOwner(channelId) {",
+                    "      return request.auth != null",
+                    "        && request.auth.token.email != null",
+                    "        && request.auth.token.email.lower() == channelId;",
+                    "    }",
+                    "    match /pos_mobile_backups/{channelId}/{fileName} {",
+                    "      allow read, write: if isChannelOwner(channelId);",
+                    "    }",
+                    "  }",
+                    "}"
+                ].join("\n");
+                box.innerHTML =
+                    '<div class="detail-empty" style="color:#fca5a5;text-align:right;line-height:1.55;">' +
+                    (isPerm ? '<strong>⚠️ Firebase Rules نەچالاکن بۆ backup</strong><br><br>' : '<strong>⚠️ کێشە لە خوێندنەوەی backup</strong><br><br>') +
+                    '<strong>① Firestore Database → Rules</strong> — ئەم بەشە زیاد بکە (پاش function isChannelOwner):<br>' +
+                    '<pre id="mmRulesFirestore" style="font-size:0.65rem;word-break:break-all;margin:8px 0;padding:8px;background:rgba(0,0,0,.25);border-radius:8px;text-align:left;direction:ltr;white-space:pre-wrap;">' + esc(firestoreBlock) + '</pre>' +
+                    '<button type="button" class="backup-dl-btn" id="mmCopyFirestoreRules" style="margin-bottom:10px;"><i class="fas fa-copy"></i> کۆپی Firestore</button><br>' +
+                    '<strong>② Storage → Rules</strong> — تەواوی ئەم فایلە paste بکە:<br>' +
+                    '<pre id="mmRulesStorage" style="font-size:0.65rem;word-break:break-all;margin:8px 0;padding:8px;background:rgba(0,0,0,.25);border-radius:8px;text-align:left;direction:ltr;white-space:pre-wrap;">' + esc(storageBlock) + '</pre>' +
+                    '<button type="button" class="backup-dl-btn" id="mmCopyStorageRules"><i class="fas fa-copy"></i> کۆپی Storage</button><br><br>' +
+                    '<strong>③ Publish</strong> بکە · پاشان لە POS یەک جار «پاشەکەوتکردن (ZIP)» + Firebase پەیوەست</div>';
+                const copyFs = document.getElementById("mmCopyFirestoreRules");
+                const copySt = document.getElementById("mmCopyStorageRules");
+                if (copyFs) copyFs.addEventListener("click", function () {
+                    navigator.clipboard.writeText(firestoreBlock).then(function () { alert("✓ Firestore rule کۆپی کرا"); }).catch(function () { prompt("کۆپی:", firestoreBlock); });
+                });
+                if (copySt) copySt.addEventListener("click", function () {
+                    navigator.clipboard.writeText(storageBlock).then(function () { alert("✓ Storage rule کۆپی کرا"); }).catch(function () { prompt("کۆپی:", storageBlock); });
+                });
+            });
         }
 
         function updateHomeSyncText(text) {
@@ -2316,6 +2507,8 @@
         if (homeGoDash) homeGoDash.addEventListener("click", () => switchMobileTab("dash"));
         if (homeGoInv) homeGoInv.addEventListener("click", () => switchMobileTab("inv"));
         if (homeGoDebt) homeGoDebt.addEventListener("click", () => switchMobileTab("debt"));
+        const homeGoBackup = document.getElementById("homeGoBackup");
+        if (homeGoBackup) homeGoBackup.addEventListener("click", () => switchMobileTab("backup"));
         document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
         const logoutBtnHome = document.getElementById("logoutBtnHome");
         if (logoutBtnHome) logoutBtnHome.addEventListener("click", () => signOut(auth));
@@ -2341,9 +2534,34 @@
 
         let deferredInstallPrompt = null;
         const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+        const isAndroid = /android/i.test(navigator.userAgent || "");
+        const isMobileUa = isIos || isAndroid || /mobile/i.test(navigator.userAgent || "");
         const isStandalone =
             window.matchMedia("(display-mode: standalone)").matches ||
             window.navigator.standalone === true;
+
+        function mmOpenInstallHelp() {
+            const cardAuth = document.getElementById("installCardAuth");
+            const cardHome = document.getElementById("installCardHome");
+            if (cardAuth && authCard && !authCard.classList.contains("hidden")) {
+                cardAuth.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+            }
+            if (cardHome) {
+                cardHome.classList.remove("hidden");
+                cardHome.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        }
+
+        function mmRefreshInstallBar() {
+            const bar = document.getElementById("mmInstallBar");
+            if (!bar) return;
+            if (isStandalone || !isMobileUa) {
+                bar.classList.add("hidden");
+                return;
+            }
+            bar.classList.remove("hidden");
+        }
 
         function setupInstallUi() {
             const cardAuth = document.getElementById("installCardAuth");
@@ -2352,29 +2570,40 @@
             const androidAuth = document.getElementById("installStepsAndroidAuth");
             const btnAuth = document.getElementById("installBtnAuth");
             const btnHome = document.getElementById("installBtnHome");
+            const barBtn = document.getElementById("mmInstallBarBtn");
 
             if (isStandalone) {
                 if (cardAuth) cardAuth.classList.add("hidden");
                 if (cardHome) cardHome.classList.add("hidden");
+                mmRefreshInstallBar();
                 return;
             }
+            if (cardAuth) cardAuth.classList.remove("hidden");
             if (cardHome) cardHome.classList.remove("hidden");
             if (isIos) {
                 if (iosAuth) iosAuth.classList.remove("hidden");
-            } else if (androidAuth) {
-                androidAuth.classList.remove("hidden");
+                if (androidAuth) androidAuth.classList.add("hidden");
+            } else {
+                if (androidAuth) androidAuth.classList.remove("hidden");
+                if (iosAuth) iosAuth.classList.add("hidden");
             }
 
             async function runInstall() {
-                if (!deferredInstallPrompt) return;
-                deferredInstallPrompt.prompt();
-                try { await deferredInstallPrompt.userChoice; } catch (e) {}
-                deferredInstallPrompt = null;
-                if (btnAuth) btnAuth.classList.add("hidden");
-                if (btnHome) btnHome.classList.add("hidden");
+                if (deferredInstallPrompt) {
+                    deferredInstallPrompt.prompt();
+                    try { await deferredInstallPrompt.userChoice; } catch (e) {}
+                    deferredInstallPrompt = null;
+                    if (btnAuth) btnAuth.classList.add("hidden");
+                    if (btnHome) btnHome.classList.add("hidden");
+                    mmRefreshInstallBar();
+                    return;
+                }
+                mmOpenInstallHelp();
             }
             if (btnAuth) btnAuth.addEventListener("click", runInstall);
             if (btnHome) btnHome.addEventListener("click", runInstall);
+            if (barBtn) barBtn.addEventListener("click", runInstall);
+            mmRefreshInstallBar();
         }
 
         window.addEventListener("beforeinstallprompt", (e) => {
@@ -2386,6 +2615,16 @@
             if (btnAuth) btnAuth.classList.remove("hidden");
             if (btnHome) btnHome.classList.remove("hidden");
             if (androidAuth) androidAuth.classList.add("hidden");
+            mmRefreshInstallBar();
+        });
+
+        window.addEventListener("appinstalled", function () {
+            deferredInstallPrompt = null;
+            mmRefreshInstallBar();
+            const cardAuth = document.getElementById("installCardAuth");
+            const cardHome = document.getElementById("installCardHome");
+            if (cardAuth) cardAuth.classList.add("hidden");
+            if (cardHome) cardHome.classList.add("hidden");
         });
 
         bindInvDateFilters();
@@ -2426,6 +2665,8 @@
                 if (unsubDetail) { unsubDetail(); unsubDetail = null; }
                 if (unsubInventory) { unsubInventory(); unsubInventory = null; }
                 if (unsubDebt) { unsubDebt(); unsubDebt = null; }
+                if (unsubBackup) { unsubBackup(); unsubBackup = null; }
+                if (panelBackup) panelBackup.classList.add("hidden");
                 const detailCard = document.getElementById("detailCard");
                 if (detailCard) detailCard.classList.add("hidden");
                 if (panelInv) panelInv.classList.add("hidden");
@@ -2439,12 +2680,13 @@
             }
             authCard.classList.add("hidden");
             dashboard.classList.remove("hidden");
+            mmRefreshInstallBar();
             if (appShell) appShell.classList.add("is-logged-in");
             if (bottomNav) bottomNav.classList.remove("hidden");
             const homeEmail = document.getElementById("homeEmail");
             if (homeEmail) homeEmail.textContent = user.email;
             const savedTab = (function () { try { return localStorage.getItem("pos_mobile_tab") || "home"; } catch (e) { return "home"; } })();
-            switchMobileTab(savedTab === "debt" ? "debt" : savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
+            switchMobileTab(savedTab === "backup" ? "backup" : savedTab === "debt" ? "debt" : savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
             const channelId = user.email.toLowerCase();
             activeChannelId = channelId;
             if (refreshBtn) refreshBtn.classList.remove("hidden");
@@ -2452,6 +2694,7 @@
             bindDetail(channelId);
             bindInventory(channelId);
             bindDebt(channelId);
+            bindBackups(channelId);
         });
     </script>
 </body>
