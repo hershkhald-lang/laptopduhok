@@ -212,6 +212,8 @@
                     var msg = String(err.message || err);
                     if (/failed to fetch|network|load/i.test(msg)) {
                         msg = "پەیوەندی بە POS نەکرا — WiFi، IP، XAMPP، Local Network (Settings)";
+                    } else if (/device_blocked|سیکوریتی|TERM|\$99|خانە/i.test(msg)) {
+                        msg = "هەڵە: " + msg + " — ئەگەر هێشتا دەردەکەوێت Apache ڕێستارت بکە.";
                     }
                     showErr(msg);
                     if (box) box.innerHTML = "";
