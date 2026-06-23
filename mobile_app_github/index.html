@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="LD Manager" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="LD Manager" />
-    <title>Laptop Duhok POS — MOBILE APP v2.14.30</title>
+    <title>Laptop Duhok POS — MOBILE APP v2.14.45</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/brand/laptop-duhok-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/brand/laptop-duhok-logo.png">
@@ -718,7 +718,7 @@
                 </div>
                 <div>
                     <p class="brand-title">Laptop Duhok POS</p>
-                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.14.30</span></p>
+                    <p class="brand-sub">MOBILE APP <span class="ver-badge" dir="ltr">v2.14.45</span></p>
                 </div>
             </div>
             <div class="topbar-actions">
@@ -831,6 +831,7 @@
                         <h2 class="dash-title"><i class="fas fa-signal" style="color:var(--brand)"></i> داشبۆردی ئەمڕۆ</h2>
                         <div id="status" class="status"><i class="fas fa-circle-notch fa-spin"></i> پەیوەندی…</div>
                     </div>
+                    <p id="dashCurrencyHint" class="sub" style="margin:0 0 12px;font-size:0.72rem;color:var(--muted);"><i class="fas fa-coins"></i> هەموو بڕەکان بە دیناری عێراقی (د.ع) — POS دۆلار بێت یان دینار</p>
 
                     <div class="kpi-featured">
                         <div class="label"><i class="fas fa-chart-line"></i> قازانجی خاو</div>
@@ -1120,8 +1121,29 @@
         }
 
         function formatMoney(v) {
-            const n = Number(v || 0);
-            return new Intl.NumberFormat("en-US").format(Number.isFinite(n) ? n : 0);
+            const n = Math.round(Number(v || 0));
+            return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number.isFinite(n) ? n : 0);
+        }
+
+        function formatMoneyIqd(v) {
+            return formatMoney(v) + " د.ع";
+        }
+
+        let mobileAmountMeta = { amountCurrency: "IQD", syncVersion: 3 };
+
+        function setMobileAmountMeta(src) {
+            if (!src) return;
+            var meta = src.meta || src;
+            mobileAmountMeta = {
+                amountCurrency: src.amountCurrency || meta.amountCurrency || "IQD",
+                posDisplayCurrency: src.posDisplayCurrency || meta.posDisplayCurrency || "IQD",
+                syncVersion: Number(src.syncVersion != null ? src.syncVersion : (meta.v != null ? meta.v : 3)),
+                usdRatePerOne: Number(src.usdRatePerOne || meta.usdRatePerOne || 0)
+            };
+        }
+
+        function normalizeMobileIqd(val) {
+            return Math.round(Number(val) || 0);
         }
 
         function groupSaleLineItems(items) {
@@ -1383,8 +1405,9 @@
             debtDocSynced = true;
             const summary = data.summary || {};
             const meta = data.meta || {};
-            if (debtCustTotal) debtCustTotal.textContent = formatMoney(summary.customerReceivables || 0);
-            if (debtSupTotal) debtSupTotal.textContent = formatMoney(summary.supplierPayables || 0);
+            setMobileAmountMeta(data);
+            if (debtCustTotal) debtCustTotal.textContent = formatMoneyIqd(normalizeMobileIqd(summary.customerReceivables || 0));
+            if (debtSupTotal) debtSupTotal.textContent = formatMoneyIqd(normalizeMobileIqd(summary.supplierPayables || 0));
             if (debtCustCount) debtCustCount.textContent = String(Number(summary.customerDebtorCount || 0)) + " کڕیار";
             if (debtSupCount) debtSupCount.textContent = String(Number(summary.supplierDebtCount || 0)) + " کۆمپانیا";
             if (debtMeta) {
@@ -1588,8 +1611,8 @@
                     '<td class="inv-td-name">' + esc(p.name || "—") + lossHint + "</td>" +
                     "<td>" + esc(p.category || "—") + "</td>" +
                     "<td>" + esc(p.manufacturer || "—") + "</td>" +
-                    '<td class="inv-td-money">' + formatMoney(p.cost) + "</td>" +
-                    '<td class="inv-td-money">' + formatMoney(p.price) + "</td>" +
+                    '<td class="inv-td-money">' + formatMoneyIqd(normalizeMobileIqd(p.cost)) + "</td>" +
+                    '<td class="inv-td-money">' + formatMoneyIqd(normalizeMobileIqd(p.price)) + "</td>" +
                     '<td class="inv-td-qty ' + st + '">' + formatQty(p.qty) + "</td>" +
                     "<td>" + esc(p.minStock != null ? p.minStock : "—") + "</td>" +
                     "<td>" + esc(p.expiry || "—") + "</td>" +
@@ -1857,23 +1880,24 @@
 
         function applyDashboardData(d, opts) {
             opts = opts || {};
+            setMobileAmountMeta(d);
             if (!d) {
-                kpiSales.textContent = "0";
-                kpiExpenses.textContent = "0";
-                kpiNet.textContent = "0";
+                kpiSales.textContent = "0 د.ع";
+                kpiExpenses.textContent = "0 د.ع";
+                kpiNet.textContent = "0 د.ع";
                 kpiInvoices.textContent = "0";
                 metaEl.innerHTML = '<i class="fas fa-clock"></i> دوایین نوێکردنەوە: هێشتا داتا نییە';
                 updateHomeSyncText("دوایین sync: هێشتا داتا نییە");
                 const hNet0 = document.getElementById("homeNet");
                 const hSales0 = document.getElementById("homeSales");
-                if (hNet0) hNet0.textContent = "0";
-                if (hSales0) hSales0.textContent = "0";
+                if (hNet0) hNet0.textContent = "0 د.ع";
+                if (hSales0) hSales0.textContent = "0 د.ع";
                 if (!opts.silent) setStatus("چاوەڕێی یەکەم sync", false);
                 return;
             }
-            kpiSales.textContent = formatMoney(d.salesToday);
-            kpiExpenses.textContent = formatMoney(d.expensesToday);
-            kpiNet.textContent = formatMoney(d.netProfitToday);
+            kpiSales.textContent = formatMoneyIqd(normalizeMobileIqd(d.salesToday));
+            kpiExpenses.textContent = formatMoneyIqd(normalizeMobileIqd(d.expensesToday));
+            kpiNet.textContent = formatMoneyIqd(normalizeMobileIqd(d.netProfitToday));
             kpiInvoices.textContent = String(Number(d.invoicesCountToday || 0));
             const ts = d.updatedAt && d.updatedAt.toDate ? d.updatedAt.toDate() : new Date();
             const syncTxt = "دوایین نوێکردنەوە: " + ts.toLocaleTimeString("ar-IQ", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -1881,8 +1905,8 @@
             updateHomeSyncText("دوایین sync: " + ts.toLocaleTimeString("ar-IQ", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
             const hNet = document.getElementById("homeNet");
             const hSales = document.getElementById("homeSales");
-            if (hNet) hNet.textContent = formatMoney(d.netProfitToday);
-            if (hSales) hSales.textContent = formatMoney(d.salesToday);
+            if (hNet) hNet.textContent = formatMoneyIqd(normalizeMobileIqd(d.netProfitToday));
+            if (hSales) hSales.textContent = formatMoneyIqd(normalizeMobileIqd(d.salesToday));
             if (!opts.silent) setStatus(navigator.onLine ? "پەیوەست" : "ئۆفلاین", navigator.onLine);
         }
 
@@ -1905,6 +1929,7 @@
                 return;
             }
             invDocSynced = true;
+            setMobileAmountMeta(data);
             const summary = data.summary || {};
             const meta = data.meta || {};
             const products = Array.isArray(data.products) ? data.products : [];
@@ -1949,6 +1974,7 @@
                 return;
             }
             const meta = data.meta || {};
+            setMobileAmountMeta(data);
             const sales = Array.isArray(data.sales) ? data.sales : [];
             const ret = Array.isArray(data.returns) ? data.returns : [];
             const exp = Array.isArray(data.expenses) ? data.expenses : [];
@@ -1965,11 +1991,11 @@
                     if (itemsArr.length) {
                         itemsHtml = '<div class="sale-items">';
                         itemsArr.forEach((it) => {
-                            itemsHtml += '<div class="sale-item"><span>' + esc(formatQty(it.qty)) + "× " + esc(it.name) + '</span><span class="price">' + formatMoney(it.price) + "</span></div>";
+                            itemsHtml += '<div class="sale-item"><span>' + esc(formatQty(it.qty)) + "× " + esc(it.name) + '</span><span class="price">' + formatMoneyIqd(normalizeMobileIqd(it.price)) + "</span></div>";
                         });
                         itemsHtml += "</div>";
                     }
-                    html += '<div class="sale-card"><div class="sale-card-top"><span class="sale-id">#' + esc(s.id) + '</span><span class="sale-total">' + formatMoney(s.total) + " د.ع</span></div>" +
+                    html += '<div class="sale-card"><div class="sale-card-top"><span class="sale-id">#' + esc(s.id) + '</span><span class="sale-total">' + formatMoneyIqd(normalizeMobileIqd(s.total)) + "</span></div>" +
                         '<div class="sale-meta"><span><i class="fas fa-user"></i> ' + esc(s.cashier || "کاشێر") + '</span><span><i class="fas fa-money-bill"></i> ' + esc(s.payment_method || "نەقد") + "</span></div>" +
                         itemsHtml + "</div>";
                 });
@@ -1977,12 +2003,12 @@
             html += '<div class="detail-h returns"><i class="fas fa-rotate-left"></i> گەڕانەوە (' + ret.length + ")</div>";
             if (!ret.length) html += '<div class="detail-empty">—</div>';
             else ret.slice(0, 100).forEach((r) => {
-                html += '<div class="line-row"><span><strong>#' + esc(r.id) + "</strong></span><span class=\"amt\">" + formatMoney(r.total) + " د.ع</span></div>";
+                html += '<div class="line-row"><span><strong>#' + esc(r.id) + "</strong></span><span class=\"amt\">" + formatMoneyIqd(normalizeMobileIqd(r.total)) + "</span></div>";
             });
             html += '<div class="detail-h expenses"><i class="fas fa-coins"></i> مەسرەف (' + exp.length + ")</div>";
             if (!exp.length) html += '<div class="detail-empty">—</div>';
             else exp.slice(0, 100).forEach((e) => {
-                html += '<div class="line-row"><span>' + esc(e.type || "") + " " + esc(e.note || "") + '</span><span class="amt">' + formatMoney(e.amount) + " د.ع</span></div>";
+                html += '<div class="line-row"><span>' + esc(e.type || "") + " " + esc(e.note || "") + '</span><span class="amt">' + formatMoneyIqd(normalizeMobileIqd(e.amount)) + "</span></div>";
             });
             detailContent.innerHTML = html;
         }
