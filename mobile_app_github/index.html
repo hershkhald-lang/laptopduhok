@@ -869,9 +869,9 @@
                             <small>کڕیار · کڕین کۆمپانیا (تەنها بینین)</small>
                         </button>
                         <button type="button" class="home-tile tile-backup" id="homeGoBackup">
-                            <i class="fas fa-cloud-arrow-down"></i>
+                            <i class="fas fa-download"></i>
                             <strong>پاشەکەوت</strong>
-                            <small>داونلۆدی ZIP لە Cloud (ئەگەر لاپتۆپ سوت)</small>
+                            <small>داونلۆد لە WiFi (بێ پارە) · Telegram</small>
                         </button>
                     </div>
                     <p class="home-foot" id="homeLastSync"><i class="fas fa-clock"></i> دوایین sync: —</p>
@@ -1054,15 +1054,23 @@
 
                 <div id="panelBackup" class="app-panel hidden">
                 <div class="card">
-                    <h2 class="section-title"><i class="fas fa-cloud-arrow-down" style="color:#a5b4fc"></i> پاشەکەوت (Cloud)</h2>
-                    <p class="sub" style="margin:0;">لە POS: پاشەکەوتکردن (ZIP) + Firebase پەیوەست · ئێرە داونلۆد بکە بۆ مۆبایلەکەت</p>
+                    <h2 class="section-title"><i class="fas fa-download" style="color:#a5b4fc"></i> پاشەکەوت (بێ پارە)</h2>
+                    <p class="sub" style="margin:0;">لە POS: پاشەکەوتکردن (ZIP) · هەمان WiFi + PIN · ئێرە داونلۆد بکە بۆ مۆبایلەکەت</p>
                     <div class="read-only-notice" style="margin-top:12px;">
                         <i class="fas fa-shield-halved"></i>
                         <span><strong>تەنها داونلۆد.</strong> گەڕاندنەوە لە لاپتۆپێکی نوێ + XAMPP دەکرێت — فایلەکە لە مۆبایل بپارێزە.</span>
                     </div>
-                    <div id="backupContent" class="backup-scroll-area">
-                        <div class="detail-empty">چاوەڕێی لیست…</div>
+                    <div class="mm-backup-form" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+                        <label style="font-size:0.78rem;color:var(--muted);">POS URL (WiFi)</label>
+                        <input type="url" id="mmPosUrl" dir="ltr" placeholder="http://192.168.1.5/pos" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--input-bg);color:var(--text);" />
+                        <label style="font-size:0.78rem;color:var(--muted);">PIN</label>
+                        <input type="tel" id="mmBackupPin" dir="ltr" inputmode="numeric" maxlength="8" placeholder="2026 (settingsPin)" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--input-bg);color:var(--text);" />
+                        <button type="button" id="mmLoadBackupsBtn" class="backup-dl-btn" style="width:100%;margin-top:4px;"><i class="fas fa-list"></i> List backups</button>
                     </div>
+                    <div id="backupContent" class="backup-scroll-area">
+                        <div class="detail-empty">POS URL + PIN · laptop must be on</div>
+                    </div>
+                    <p class="sub" style="margin:12px 0 0;font-size:0.72rem;line-height:1.5;"><i class="fab fa-telegram"></i> Telegram backup from POS Settings (free, off-site).</p>
                 </div>
                 </div>
             </div>
@@ -1125,7 +1133,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, getDocFromServer } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-        import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
         const firebaseConfig = window.POS_FIREBASE_CONFIG || {};
         if (!firebaseConfig.apiKey) {
@@ -1137,7 +1144,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const storage = getStorage(app);
 
         const authCard = document.getElementById("authCard");
         const dashboard = document.getElementById("dashboard");
@@ -1154,7 +1160,7 @@
         let unsubDetail = null;
         let unsubInventory = null;
         let unsubDebt = null;
-        let unsubBackup = null;
+        let mmBackupItems = [];
         let activeChannelId = "";
         let refreshBusy = false;
         const refreshBtn = document.getElementById("refreshBtn");
@@ -1210,16 +1216,44 @@
             } catch (e) { return "—"; }
         }
 
+        function guessPosApiBase() {
+            try {
+                const p = location.pathname || "";
+                const idx = p.toLowerCase().indexOf("/public/mobile_manager");
+                if (idx >= 0) return (location.origin + p.substring(0, idx)).replace(/\/$/, "");
+            } catch (e) {}
+            return (location.origin + "/pos").replace(/\/$/, "");
+        }
+
+        function getMmPosBase() {
+            const el = document.getElementById("mmPosUrl");
+            let v = el && el.value ? String(el.value).trim() : "";
+            if (!v) { try { v = localStorage.getItem("mm_pos_url") || ""; } catch (e) {} }
+            if (!v) v = guessPosApiBase();
+            return v.replace(/\/$/, "");
+        }
+
+        function getMmBackupPin() {
+            const el = document.getElementById("mmBackupPin");
+            let v = el && el.value ? String(el.value).trim() : "";
+            if (!v) { try { v = localStorage.getItem("mm_backup_pin") || ""; } catch (e) {} }
+            return v.replace(/\D/g, "");
+        }
+
+        let mmPosBaseCached = "";
+        let mmPinCached = "";
+
         function renderBackupList(items) {
             const box = document.getElementById("backupContent");
             if (!box) return;
             if (!items || !items.length) {
-                box.innerHTML = '<div class="detail-empty">هێشتا backup لە Cloud نییە.<br><small>لە POS: Settings → پاشەکەوتکردن (ZIP) + Firebase پەیوەست بکە.</small></div>';
+                box.innerHTML = '<div class="detail-empty">backup ni ye.<br><small>POS: pashakewt (ZIP) yek jar.</small></div>';
                 return;
             }
+            mmBackupItems = items;
             box.innerHTML = items.map(function (it, idx) {
                 const name = esc(it.name || "backup.zip");
-                const sub = formatBackupDate(it.createdAt) + " · " + formatBackupBytes(it.bytes);
+                const sub = (it.mtime_iso || formatBackupDate(it.mtime)) + " · " + formatBackupBytes(it.bytes);
                 return '<div class="backup-row">' +
                     '<div class="backup-row-meta"><div class="backup-row-name">' + name + '</div><div class="backup-row-sub">' + sub + '</div></div>' +
                     '<button type="button" class="backup-dl-btn" data-backup-idx="' + idx + '"><i class="fas fa-download"></i> داونلۆد</button>' +
@@ -1228,84 +1262,95 @@
             box.querySelectorAll(".backup-dl-btn").forEach(function (btn) {
                 btn.addEventListener("click", function () {
                     const i = parseInt(btn.getAttribute("data-backup-idx"), 10);
-                    const it = items[i];
-                    if (!it || !it.storagePath) return;
+                    const it = mmBackupItems[i];
+                    if (!it || !it.name) return;
                     btn.disabled = true;
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                    getDownloadURL(storageRef(storage, it.storagePath))
-                        .then(function (url) {
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = it.name || "backup.zip";
-                            a.rel = "noopener";
-                            a.target = "_blank";
-                            document.body.appendChild(a);
+                    const dlUrl = mmPosBaseCached + "/?action=mobile_download_backup&pin=" + encodeURIComponent(mmPinCached) + "&name=" + encodeURIComponent(it.name);
+                    fetch(dlUrl).then(function (res) {
+                        if (!res.ok) throw new Error("HTTP " + res.status);
+                        return res.blob();
+                    }).then(function (blob) {
+                        const obj = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = obj;
+                        a.download = it.name || "backup.zip";
+                        document.body.appendChild(a);
                             a.click();
-                            document.body.removeChild(a);
-                            btn.disabled = false;
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(obj);
+                        btn.disabled = false;
                             btn.innerHTML = '<i class="fas fa-download"></i> داونلۆد';
                         })
                         .catch(function () {
                             btn.disabled = false;
                             btn.innerHTML = '<i class="fas fa-download"></i> داونلۆد';
-                            alert("❌ نەتوانرا داونلۆد بکرێت — Storage Rules یان ئینتەرنێت بپشکنە.");
+                            alert("❌ نەتوانرا داونلۆد بکرێت — WiFi یان PIN بپشکنە.");
                         });
                 });
             });
         }
 
+        function loadLanBackups() {
+            const posBase = getMmPosBase();
+            const pin = getMmBackupPin();
+            const box = document.getElementById("backupContent");
+            if (!pin || pin.length < 4) {
+                alert("PIN لە POS بنووسە: ڕێکخستن → پێشکەوتوو → بەڕێوەبردنی داتابەیس");
+                return;
+            }
+            if (/localhost|127\.0\.0\.1/i.test(posBase)) {
+                if (box) box.innerHTML = '<div class="detail-empty" style="color:#fca5a5;">localhost لە موبایل کار ناکات.<br><small>IPـی WiFiـی لاپتۆپ بنووسە، وەک: http://192.168.1.5/pos</small></div>';
+                return;
+            }
+            mmPosBaseCached = posBase;
+            mmPinCached = pin;
+            try {
+                localStorage.setItem("mm_pos_url", posBase);
+                localStorage.setItem("mm_backup_pin", pin);
+            } catch (e) {}
+            if (box) box.innerHTML = '<div class="detail-empty"><i class="fas fa-spinner fa-spin"></i></div>';
+            fetch(posBase + "/?action=mobile_list_backups&pin=" + encodeURIComponent(pin))
+                .then(function (res) {
+                    return res.json().then(function (data) {
+                        if (!res.ok || data.status !== "success") {
+                            throw new Error(data.message || ("HTTP " + res.status));
+                        }
+                        return data;
+                    });
+                })
+                .then(function (data) {
+                    renderBackupList(data.backups || []);
+                })
+                .catch(function (err) {
+                    let msg = String(err.message || err);
+                    if (/failed to fetch|network|load/i.test(msg)) {
+                        msg = "پەیوەندی بە POS نەکرا — WiFi، IP، XAMPP بپشکنە";
+                    } else if (/PIN|403|نادروست/i.test(msg)) {
+                        msg = "PIN نادروستە — لە POS: بەڕێوەبردنی داتابەیس (یان settingsPin: 2026)";
+                    }
+                    if (box) box.innerHTML = '<div class="detail-empty" style="color:#fca5a5;">' + esc(msg) + '</div>';
+                });
+        }
+
+        function initMobileBackupUi() {
+            const urlEl = document.getElementById("mmPosUrl");
+            const pinEl = document.getElementById("mmBackupPin");
+            const btn = document.getElementById("mmLoadBackupsBtn");
+            if (urlEl && !urlEl.value) {
+                try { urlEl.value = localStorage.getItem("mm_pos_url") || guessPosApiBase(); } catch (e) { urlEl.value = guessPosApiBase(); }
+            }
+            if (pinEl && !pinEl.value) {
+                try { pinEl.value = localStorage.getItem("mm_backup_pin") || ""; } catch (e) {}
+            }
+            if (btn && !btn.__mmBound) {
+                btn.__mmBound = true;
+                btn.addEventListener("click", loadLanBackups);
+            }
+        }
+
         function bindBackups(channelId) {
-            if (unsubBackup) { unsubBackup(); unsubBackup = null; }
-            const bref = doc(db, "pos_mobile_backups", channelId);
-            unsubBackup = onSnapshot(bref, function (snap) {
-                const data = snap.exists() ? snap.data() : null;
-                const items = (data && data.items) ? data.items.slice().sort(function (a, b) {
-                    return (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0);
-                }) : [];
-                renderBackupList(items);
-            }, function (err) {
-                const box = document.getElementById("backupContent");
-                if (!box) return;
-                const isPerm = err && (err.code === "permission-denied" || String(err.message || "").toLowerCase().indexOf("permission") !== -1);
-                const firestoreBlock = [
-                    "    match /pos_mobile_backups/{channelId} {",
-                    "      allow read, write: if isChannelOwner(channelId);",
-                    "    }"
-                ].join("\n");
-                const storageBlock = [
-                    "rules_version = '2';",
-                    "service firebase.storage {",
-                    "  match /b/{bucket}/o {",
-                    "    function isChannelOwner(channelId) {",
-                    "      return request.auth != null",
-                    "        && request.auth.token.email != null",
-                    "        && request.auth.token.email.lower() == channelId;",
-                    "    }",
-                    "    match /pos_mobile_backups/{channelId}/{fileName} {",
-                    "      allow read, write: if isChannelOwner(channelId);",
-                    "    }",
-                    "  }",
-                    "}"
-                ].join("\n");
-                box.innerHTML =
-                    '<div class="detail-empty" style="color:#fca5a5;text-align:right;line-height:1.55;">' +
-                    (isPerm ? '<strong>⚠️ Firebase Rules نەچالاکن بۆ backup</strong><br><br>' : '<strong>⚠️ کێشە لە خوێندنەوەی backup</strong><br><br>') +
-                    '<strong>① Firestore Database → Rules</strong> — ئەم بەشە زیاد بکە (پاش function isChannelOwner):<br>' +
-                    '<pre id="mmRulesFirestore" style="font-size:0.65rem;word-break:break-all;margin:8px 0;padding:8px;background:rgba(0,0,0,.25);border-radius:8px;text-align:left;direction:ltr;white-space:pre-wrap;">' + esc(firestoreBlock) + '</pre>' +
-                    '<button type="button" class="backup-dl-btn" id="mmCopyFirestoreRules" style="margin-bottom:10px;"><i class="fas fa-copy"></i> کۆپی Firestore</button><br>' +
-                    '<strong>② Storage → Rules</strong> — تەواوی ئەم فایلە paste بکە:<br>' +
-                    '<pre id="mmRulesStorage" style="font-size:0.65rem;word-break:break-all;margin:8px 0;padding:8px;background:rgba(0,0,0,.25);border-radius:8px;text-align:left;direction:ltr;white-space:pre-wrap;">' + esc(storageBlock) + '</pre>' +
-                    '<button type="button" class="backup-dl-btn" id="mmCopyStorageRules"><i class="fas fa-copy"></i> کۆپی Storage</button><br><br>' +
-                    '<strong>③ Publish</strong> بکە · پاشان لە POS یەک جار «پاشەکەوتکردن (ZIP)» + Firebase پەیوەست</div>';
-                const copyFs = document.getElementById("mmCopyFirestoreRules");
-                const copySt = document.getElementById("mmCopyStorageRules");
-                if (copyFs) copyFs.addEventListener("click", function () {
-                    navigator.clipboard.writeText(firestoreBlock).then(function () { alert("✓ Firestore rule کۆپی کرا"); }).catch(function () { prompt("کۆپی:", firestoreBlock); });
-                });
-                if (copySt) copySt.addEventListener("click", function () {
-                    navigator.clipboard.writeText(storageBlock).then(function () { alert("✓ Storage rule کۆپی کرا"); }).catch(function () { prompt("کۆپی:", storageBlock); });
-                });
-            });
+            initMobileBackupUi();
         }
 
         function updateHomeSyncText(text) {
@@ -2665,7 +2710,6 @@
                 if (unsubDetail) { unsubDetail(); unsubDetail = null; }
                 if (unsubInventory) { unsubInventory(); unsubInventory = null; }
                 if (unsubDebt) { unsubDebt(); unsubDebt = null; }
-                if (unsubBackup) { unsubBackup(); unsubBackup = null; }
                 if (panelBackup) panelBackup.classList.add("hidden");
                 const detailCard = document.getElementById("detailCard");
                 if (detailCard) detailCard.classList.add("hidden");

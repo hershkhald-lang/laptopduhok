@@ -1,7 +1,7 @@
 /**
  * PWA service worker — Mobile Manager (public/mobile_manager/)
  */
-const CACHE_NAME = "ld-manager-pwa-v17";
+const CACHE_NAME = "ld-manager-pwa-v18";
 const SHELL = [
     "./index.html",
     "./manifest.json",
