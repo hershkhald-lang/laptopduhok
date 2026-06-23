@@ -1058,7 +1058,7 @@
                     <p class="sub" style="margin:0;">لە POS: پاشەکەوتکردن (ZIP) · هەمان WiFi + PIN · ئێرە داونلۆد بکە بۆ مۆبایلەکەت</p>
                     <div class="read-only-notice" style="margin-top:12px;background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.35);">
                         <i class="fab fa-apple"></i>
-                        <span><strong>iPhone:</strong> داونلۆد لە Safari باشترە — «کردنەوە لە Safari» بگرە (github.io کار ناکات بۆ WiFi).</span>
+                        <span><strong>iPhone Add to Home:</strong> داونلۆد ڕاستەوخۆ کار ناکات — «Save to Files» (Share) بگرە · یان لە Safari بکەرەوە (Add to Home مەکە بۆ backup).</span>
                     </div>
                     <div class="read-only-notice" style="margin-top:10px;">
                         <i class="fas fa-shield-halved"></i>
@@ -1256,6 +1256,61 @@
             return false;
         }
 
+        function mmIsIos() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        }
+
+        function mmIsIosStandalone() {
+            return window.navigator.standalone === true ||
+                (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+        }
+
+        function mmBackupDlLabel() {
+            return mmIsIosStandalone() ? '<i class="fas fa-share-square"></i> Save' : '<i class="fas fa-download"></i> داونلۆد';
+        }
+
+        function mmDownloadBackupFile(dlUrl, fileName, btn) {
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+            const resetBtn = function () {
+                if (!btn) return;
+                btn.disabled = false;
+                btn.innerHTML = mmBackupDlLabel();
+            };
+            fetch(dlUrl)
+                .then(function (res) {
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    return res.blob();
+                })
+                .then(function (blob) {
+                    const file = new File([blob], fileName, { type: blob.type || "application/zip" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        return navigator.share({ files: [file], title: fileName });
+                    }
+                    window.location.href = dlUrl;
+                })
+                .then(function () { resetBtn(); })
+                .catch(function (err) {
+                    resetBtn();
+                    if (err && err.name === "AbortError") return;
+                    window.location.href = dlUrl;
+                });
+        }
+
+        function mmBindBackupDownload(btn, dlUrl, fileName) {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                if (mmIsIosStandalone() || mmIsIos()) {
+                    mmDownloadBackupFile(dlUrl, fileName, btn);
+                } else {
+                    window.location.href = dlUrl;
+                }
+            });
+        }
+
         function buildMmBackupPageUrl(posBase, pin, auto) {
             const base = String(posBase || "").replace(/\/$/, "");
             const q = "pos=" + encodeURIComponent(base) + "&pin=" + encodeURIComponent(pin || "");
@@ -1288,15 +1343,20 @@
                 return;
             }
             mmBackupItems = items;
-            box.innerHTML = items.map(function (it) {
+            box.innerHTML = items.map(function (it, idx) {
                 const name = esc(it.name || "backup.zip");
                 const sub = (it.mtime_iso || formatBackupDate(it.mtime)) + " · " + formatBackupBytes(it.bytes);
-                const href = buildMmDlUrl(it.name || "backup.zip");
                 return '<div class="backup-row">' +
                     '<div class="backup-row-meta"><div class="backup-row-name">' + name + '</div><div class="backup-row-sub">' + sub + '</div></div>' +
-                    '<a class="backup-dl-btn" href="' + esc(href) + '" download="' + name + '" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-download"></i> داونلۆد</a>' +
+                    '<button type="button" class="backup-dl-btn" data-backup-idx="' + idx + '">' + mmBackupDlLabel() + '</button>' +
                     '</div>';
             }).join("");
+            box.querySelectorAll(".backup-dl-btn").forEach(function (btn) {
+                const i = parseInt(btn.getAttribute("data-backup-idx"), 10);
+                const it = mmBackupItems[i];
+                if (!it || !it.name) return;
+                mmBindBackupDownload(btn, buildMmDlUrl(it.name), it.name || "backup.zip");
+            });
         }
 
         function loadLanBackups() {

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="no" />
     <meta name="apple-mobile-web-app-title" content="POS Backup" />
     <title>پاشەکەوت — Laptop Duhok POS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
     <style>
         :root {
             --bg: #0b1220; --surface: #111827; --line: rgba(148,163,184,.2);
-            --text: #f8fafc; --muted: #94a3b8; --brand: #6366f1;
+            --text: #f8fafc; --muted: #94a3b8;
         }
         * { box-sizing: border-box; }
         body {
@@ -32,9 +32,15 @@
             background: linear-gradient(135deg, #6366f1, #3b82f6); color: #fff;
             font-weight: 700; font-size: 0.95rem; cursor: pointer;
         }
+        .btn.secondary {
+            background: linear-gradient(135deg, #0ea5e9, #6366f1); margin-top: 8px;
+        }
         .notice {
-            margin: 12px 0; padding: 12px; border-radius: 12px; font-size: 0.76rem; line-height: 1.5;
+            margin: 12px 0; padding: 12px; border-radius: 12px; font-size: 0.76rem; line-height: 1.55;
             background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.35); color: #86efac;
+        }
+        .notice.warn {
+            background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.4); color: #fcd34d;
         }
         .err { color: #fca5a5; font-size: 0.82rem; margin-top: 10px; }
         .list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
@@ -47,19 +53,25 @@
         .when { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
         .dl {
             flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
-            padding: 10px 14px; border-radius: 12px; text-decoration: none; color: #fff;
-            background: linear-gradient(135deg, #6366f1, #3b82f6); font-weight: 700; font-size: 0.78rem;
+            padding: 10px 14px; border-radius: 12px; border: none; text-decoration: none; color: #fff;
+            background: linear-gradient(135deg, #6366f1, #3b82f6); font-weight: 700; font-size: 0.78rem; cursor: pointer;
         }
+        .dl:disabled { opacity: 0.55; cursor: wait; }
         .empty { text-align: center; color: var(--muted); padding: 24px 8px; font-size: 0.82rem; }
     </style>
 </head>
 <body>
     <div class="wrap">
-        <h1><i class="fas fa-download" style="color:#a5b4fc"></i> پاشەکەوت (iPhone / Safari)</h1>
-        <p class="sub">لە POS: پاشەکەوتکردن (ZIP) · هەمان WiFi · PIN · داونلۆد بۆ Files</p>
-        <div class="notice">
-            <strong>iPhone:</strong> ئەم پەڕەیە لە Safari بکەرەوە (نەک github.io). POS URL = IPـی WiFiـی لاپتۆپ.
+        <h1><i class="fas fa-download" style="color:#a5b4fc"></i> پاشەکەوت (iPhone)</h1>
+        <p class="sub">لە POS: پاشەکەوتکردن (ZIP) · هەمان WiFi · PIN</p>
+        <div id="standaloneWarn" class="notice warn" hidden>
+            <strong>Add to Home:</strong> داونلۆد ڕاستەوخۆ کار ناکات لە iPhone.
+            دوگمەی <strong>«Save to Files»</strong> بگرە (Share) · یان ئەم پەڕەیە لە <strong>Safari</strong> بکەرەوە (Add to Home مەکە).
         </div>
+        <div class="notice">
+            POS URL = IPـی WiFiـی لاپتۆپ · PIN = 2026 (یان لە POS)
+        </div>
+        <button type="button" class="btn secondary" id="copyUrlBtn" hidden><i class="fas fa-copy"></i> کۆپی URL → Safari</button>
         <label>POS URL (WiFi)</label>
         <input type="url" id="posUrl" dir="ltr" placeholder="http://192.168.1.5/pos" autocomplete="off" />
         <label>PIN</label>
@@ -71,6 +83,14 @@
     <script>
         function esc(s) {
             return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+        }
+        function mmIsIos() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        }
+        function mmIsIosStandalone() {
+            return window.navigator.standalone === true ||
+                (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
         }
         function guessPosBase() {
             var qs = new URLSearchParams(location.search);
@@ -99,6 +119,48 @@
         function buildDlUrl(posBase, pin, name) {
             return posBase + "/?action=mobile_download_backup&pin=" + encodeURIComponent(pin) + "&name=" + encodeURIComponent(name);
         }
+        function dlBtnLabel() {
+            return mmIsIosStandalone() ? '<i class="fas fa-share-square"></i> Save' : '<i class="fas fa-download"></i> داونلۆد';
+        }
+        function mmDownloadBackupFile(dlUrl, fileName, btn) {
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+            function resetBtn() {
+                if (!btn) return;
+                btn.disabled = false;
+                btn.innerHTML = dlBtnLabel();
+            }
+            fetch(dlUrl)
+                .then(function (res) {
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    return res.blob();
+                })
+                .then(function (blob) {
+                    var file = new File([blob], fileName, { type: blob.type || "application/zip" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        return navigator.share({ files: [file], title: fileName });
+                    }
+                    window.location.href = dlUrl;
+                })
+                .then(function () { resetBtn(); })
+                .catch(function (err) {
+                    resetBtn();
+                    if (err && err.name === "AbortError") return;
+                    window.location.href = dlUrl;
+                });
+        }
+        function bindDlButton(btn, dlUrl, fileName) {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                if (mmIsIosStandalone() || mmIsIos()) {
+                    mmDownloadBackupFile(dlUrl, fileName, btn);
+                } else {
+                    window.location.href = dlUrl;
+                }
+            });
+        }
         function renderList(items, posBase, pin) {
             var box = document.getElementById("list");
             if (!box) return;
@@ -106,15 +168,18 @@
                 box.innerHTML = '<div class="empty">پاشەکەوت نییە.<br><small>لە POS: بەڕێوەبردنی داتابەیس → پاشەکەوتکردن</small></div>';
                 return;
             }
-            box.innerHTML = items.map(function (it) {
+            box.innerHTML = items.map(function (it, idx) {
                 var name = it.name || "backup.zip";
                 var sub = (it.mtime_iso || "") + " · " + formatBytes(it.bytes);
-                var href = buildDlUrl(posBase, pin, name);
                 return '<div class="row">' +
                     '<div class="meta"><div class="name">' + esc(name) + '</div><div class="when">' + esc(sub) + '</div></div>' +
-                    '<a class="dl" href="' + esc(href) + '" download="' + esc(name) + '"><i class="fas fa-download"></i> داونلۆد</a>' +
+                    '<button type="button" class="dl" data-dl-idx="' + idx + '">' + dlBtnLabel() + '</button>' +
                     '</div>';
             }).join("");
+            items.forEach(function (it, idx) {
+                var btn = box.querySelector('[data-dl-idx="' + idx + '"]');
+                if (btn) bindDlButton(btn, buildDlUrl(posBase, pin, it.name || "backup.zip"), it.name || "backup.zip");
+            });
         }
         function loadList() {
             var posEl = document.getElementById("posUrl");
@@ -146,7 +211,7 @@
                 .catch(function (err) {
                     var msg = String(err.message || err);
                     if (/failed to fetch|network|load/i.test(msg)) {
-                        msg = "پەیوەندی بە POS نەکرا — WiFi، IP، XAMPP، Local Network (iPhone Settings)";
+                        msg = "پەیوەندی بە POS نەکرا — WiFi، IP، XAMPP، Local Network (Settings)";
                     }
                     showErr(msg);
                     if (box) box.innerHTML = "";
@@ -163,6 +228,24 @@
             if (!pos) pos = guessPosBase();
             if (posEl) posEl.value = pos;
             if (pinEl) pinEl.value = pin;
+            if (mmIsIosStandalone()) {
+                var w = document.getElementById("standaloneWarn");
+                if (w) w.hidden = false;
+                var c = document.getElementById("copyUrlBtn");
+                if (c) {
+                    c.hidden = false;
+                    c.addEventListener("click", function () {
+                        var url = location.href.split("#")[0];
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(url).then(function () {
+                                alert("URL کۆپی کرا — Safari بکەرەوە و Paste بکە");
+                            }).catch(function () { prompt("URL لە Safari:", url); });
+                        } else {
+                            prompt("URL لە Safari paste بکە:", url);
+                        }
+                    });
+                }
+            }
             document.getElementById("listBtn").addEventListener("click", loadList);
             if (qs.get("auto") === "1" && pin.length >= 4) loadList();
         })();
