@@ -9,6 +9,14 @@
         }
         mmSb.mmSbInit(window.POS_SUPABASE_MOBILE);
 
+        if (location.pathname.indexOf("/github_pages_LP/") >= 0) {
+            const warn = document.createElement("div");
+            warn.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:99999;background:#b45309;color:#fff;padding:10px 14px;font-size:0.78rem;line-height:1.45;text-align:center;";
+            const fixed = location.origin + location.pathname.replace(/\/github_pages_LP\/mobile_app_github\/?.*$/, "/mobile_app_github/");
+            warn.innerHTML = "⚠️ لینکی هەڵە — ئەم URLـە کۆنە. لینکی دروست: <a href=\"" + fixed + "\" style=\"color:#fff;text-decoration:underline;\" dir=\"ltr\">" + fixed + "</a>";
+            document.body.prepend(warn);
+        }
+
         const MM_MAX_SHOPS = 6;
         const MM_ACCOUNTS_KEY = "mm_saved_accounts_v1";
         const MM_ACTIVE_ACCOUNT_KEY = "mm_active_account";
@@ -1811,7 +1819,9 @@
                 kpiNet.textContent = formatMobileMoney(0);
                 kpiInvoices.textContent = "0";
                 mmApplyProfitPrivacyUi(false);
-                metaEl.innerHTML = '<i class="fas fa-clock"></i> دوایین نوێکردنەوە: هێشتا داتا نییە';
+                metaEl.innerHTML = '<i class="fas fa-clock"></i> دوایین نوێکردنەوە: هێشتا داتا نییە' +
+                    (activeChannelId ? '<br><small style="color:var(--muted)">کەناڵ: <span dir="ltr">' + esc(activeChannelId) + '</span></small>' : '') +
+                    '<br><small style="color:#fbbf24;line-height:1.5;margin-top:6px;display:block;">لە POS: ڕێکخستن → پەیوەستکردنی مۆبایل (هەمان ئیمەیڵ) → «ئێستا هاوکات بکە»</small>';
                 updateHomeSyncText("دوایین sync: هێشتا داتا نییە");
                 const hNet0 = document.getElementById("homeNet");
                 const hSales0 = document.getElementById("homeSales");
@@ -2096,8 +2106,11 @@
             if (unsub) unsub();
             unsub = mmSb.mmSbBindDashboard(channelId, function (d) {
                 applyDashboardData(d);
-            }, function () {
+            }, function (err) {
+                const msg = err && err.message ? String(err.message) : "RLS";
                 setStatus("هەڵەی Supabase", false);
+                metaEl.innerHTML = '<i class="fas fa-triangle-exclamation" style="color:#fca5a5"></i> نەتوانرا داتا بخوێنرێتەوە: ' + esc(msg) +
+                    '<br><small>SQL: supabase_mobile_sync.sql · Auth: هەمان ئیمەیڵ لە POS و موبایل</small>';
             });
         }
 
@@ -2377,6 +2390,7 @@
             bindDebt(em);
             bindBackups(em);
             setStatus(navigator.onLine ? "پەیوەست" : "ئۆفلاین", navigator.onLine);
+            setTimeout(function () { manualRefreshAll({ silent: true }); }, 400);
         }
 
         mmSb.mmSbOnAuthStateChange(function (user) {
