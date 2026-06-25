@@ -1,12 +1,14 @@
 /**
  * iPhone / iPad touch bridge — works before ES modules load.
- * Fixes: stale boot overlay, touchend quirks, module init delays.
+ * Fixes: stale boot overlay, touchend quirks, module init delays, post-boot iOS taps.
  */
 (function () {
     var ua = navigator.userAgent || "";
     var isIos = window.__MM_IS_IOS ||
         /iPad|iPhone|iPod/.test(ua) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    var lastSynth = { el: null, t: 0 };
 
     function hideBoot() {
         var o = document.getElementById("mmBootOverlay");
@@ -121,28 +123,61 @@
         return el.closest("button, a[href], .mm-shop-card, .mm-saved-auth-item, .nav-tab, .btn-primary, .btn-install, .btn-ghost, .refresh-btn");
     }
 
-    function handleTap(e) {
-        if (window.__mmAppReady) return;
-        var t = tapTarget(e.target);
-        if (!t) return;
+    function isTouchEndEvent(e) {
+        return e.type === "touchend" || e.type === "pointerup";
+    }
+
+    function runPreBootAction(t, e) {
         if (t.id === "authForm" || (t.closest && t.closest("#authForm") && t.type === "submit")) {
             e.preventDefault();
             iphoneLogin();
-            return;
+            return true;
         }
         var fn = t.id && ACTION_MAP[t.id];
         if (fn) {
             e.preventDefault();
             e.stopPropagation();
             fn();
-            return;
+            return true;
         }
         if (t.classList && t.classList.contains("nav-tab") && t.id) {
+            e.preventDefault();
+            e.stopPropagation();
             var tab = t.id.replace(/^tab/, "").toLowerCase();
             if (tab === "home") switchTab("home");
             else if (tab === "dash") switchTab("dash");
             else if (tab === "inv") switchTab("inv");
             else if (tab === "debt") switchTab("debt");
+            return true;
+        }
+        return false;
+    }
+
+    function iosSynthClick(t, e) {
+        if (!t || t.disabled) return;
+        if (t.closest && t.closest("input, textarea, select, label")) return;
+        if (e.type === "pointerup" && e.pointerType && e.pointerType !== "touch") return;
+        var now = Date.now();
+        if (lastSynth.el === t && now - lastSynth.t < 450) return;
+        lastSynth.el = t;
+        lastSynth.t = now;
+        if (e.cancelable) e.preventDefault();
+        t.click();
+    }
+
+    function handleTap(e) {
+        var t = tapTarget(e.target);
+        if (!t) return;
+
+        if (!window.__mmAppReady) {
+            if (isTouchEndEvent(e) || e.type === "click") {
+                runPreBootAction(t, e);
+            }
+            return;
+        }
+
+        if (isIos && isTouchEndEvent(e)) {
+            iosSynthClick(t, e);
         }
     }
 
@@ -150,6 +185,7 @@
         hideBoot();
         document.addEventListener("click", handleTap, true);
         if (isIos) {
+            document.addEventListener("touchend", handleTap, { capture: true, passive: false });
             document.addEventListener("pointerup", handleTap, true);
         }
         var form = document.getElementById("authForm");

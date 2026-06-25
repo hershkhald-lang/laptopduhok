@@ -1,5 +1,5 @@
-        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.41";
-        import * as mmSb from "./mm-supabase-sync.js?v=2.16.41";
+        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.42";
+        import * as mmSb from "./mm-supabase-sync.js?v=2.16.42";
 
         const MM_HUB_CACHE_KEY = "mm_hub_cache_v2";
         const MM_DATA_CACHE_KEY = "mm_data_cache_v3";
@@ -2252,6 +2252,8 @@
         if (themeBtn) themeBtn.addEventListener("click", () => window.mmThemeToggle());
 
         document.getElementById("authForm").addEventListener("submit", (ev) => { ev.preventDefault(); doLogin(); });
+        const loginBtn = document.getElementById("loginBtn");
+        if (loginBtn) loginBtn.addEventListener("click", (ev) => { ev.preventDefault(); doLogin(); });
         if (tabHomeBtn) tabHomeBtn.addEventListener("click", () => switchMobileTab("home"));
         if (tabDashBtn) tabDashBtn.addEventListener("click", () => switchMobileTab("dash"));
         if (tabInvBtn) tabInvBtn.addEventListener("click", () => switchMobileTab("inv"));
