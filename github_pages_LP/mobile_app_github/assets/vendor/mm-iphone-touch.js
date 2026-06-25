@@ -1,6 +1,6 @@
 /**
- * iPhone / iPad touch bridge — works before ES modules load.
- * Fixes: stale boot overlay, touchend quirks, module init delays, post-boot iOS taps.
+ * iPhone / iPad — boot overlay + pre-module login/tabs (before mm-app.js loads).
+ * Post-boot taps are handled by mmBindTap() inside mm-app.js.
  */
 (function () {
     var ua = navigator.userAgent || "";
@@ -8,12 +8,14 @@
         /iPad|iPhone|iPod/.test(ua) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-    var lastSynth = { el: null, t: 0 };
+    var touch = { x: 0, y: 0, moved: false, el: null };
+    var TAP_SLOP = 14;
 
     function hideBoot() {
         var o = document.getElementById("mmBootOverlay");
         if (o) {
             o.style.pointerEvents = "none";
+            o.style.display = "none";
             o.classList.add("hidden");
         }
     }
@@ -120,11 +122,22 @@
 
     function tapTarget(el) {
         if (!el || !el.closest) return null;
-        return el.closest("button, a[href], .mm-shop-card, .mm-saved-auth-item, .nav-tab, .btn-primary, .btn-install, .btn-ghost, .refresh-btn");
+        return el.closest(
+            "button, a[href], .mm-shop-card, .mm-saved-auth-item, .nav-tab, " +
+            ".btn-primary, .btn-install, .btn-ghost, .btn-danger, .refresh-btn, " +
+            ".theme-toggle, .home-tile, .backup-dl-btn, .inv-scan-btn, .btn-pdf-featured, " +
+            ".mm-install-bar-btn, .inv-date-chip, .debt-sub-tab, .mm-modal-close, .inv-scanner-close"
+        );
     }
 
-    function isTouchEndEvent(e) {
-        return e.type === "touchend" || e.type === "pointerup";
+    function resolveTapTarget(e) {
+        var ct = e.changedTouches && e.changedTouches[0];
+        if (ct) {
+            var hit = document.elementFromPoint(ct.clientX, ct.clientY);
+            var fromPoint = tapTarget(hit);
+            if (fromPoint) return fromPoint;
+        }
+        return tapTarget(e.target) || touch.el;
     }
 
     function runPreBootAction(t, e) {
@@ -153,40 +166,47 @@
         return false;
     }
 
-    function iosSynthClick(t, e) {
-        if (!t || t.disabled) return;
-        if (t.closest && t.closest("input, textarea, select, label")) return;
-        if (e.type === "pointerup" && e.pointerType && e.pointerType !== "touch") return;
-        var now = Date.now();
-        if (lastSynth.el === t && now - lastSynth.t < 450) return;
-        lastSynth.el = t;
-        lastSynth.t = now;
-        if (e.cancelable) e.preventDefault();
-        t.click();
+    function onTouchStart(e) {
+        if (window.__mmAppReady) return;
+        touch.moved = false;
+        var t0 = e.targetTouches && e.targetTouches[0];
+        if (!t0) return;
+        touch.x = t0.clientX;
+        touch.y = t0.clientY;
+        touch.el = tapTarget(e.target);
     }
 
-    function handleTap(e) {
-        var t = tapTarget(e.target);
-        if (!t) return;
-
-        if (!window.__mmAppReady) {
-            if (isTouchEndEvent(e) || e.type === "click") {
-                runPreBootAction(t, e);
-            }
-            return;
+    function onTouchMove(e) {
+        if (window.__mmAppReady) return;
+        var t0 = e.targetTouches && e.targetTouches[0];
+        if (!t0) return;
+        if (Math.abs(t0.clientX - touch.x) > TAP_SLOP || Math.abs(t0.clientY - touch.y) > TAP_SLOP) {
+            touch.moved = true;
         }
+    }
 
-        if (isIos && isTouchEndEvent(e)) {
-            iosSynthClick(t, e);
-        }
+    function onTouchEnd(e) {
+        if (window.__mmAppReady) return;
+        if (touch.moved) return;
+        var t = resolveTapTarget(e);
+        if (!t || t.disabled) return;
+        if (t.closest && t.closest("input, textarea, select, label")) return;
+        runPreBootAction(t, e);
     }
 
     function bind() {
         hideBoot();
-        document.addEventListener("click", handleTap, true);
         if (isIos) {
-            document.addEventListener("touchend", handleTap, { capture: true, passive: false });
-            document.addEventListener("pointerup", handleTap, true);
+            document.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
+            document.addEventListener("touchmove", onTouchMove, { capture: true, passive: true });
+            document.addEventListener("touchend", onTouchEnd, { capture: true, passive: false });
+            document.addEventListener("touchcancel", function () { touch.moved = true; }, { capture: true, passive: true });
+        } else {
+            document.addEventListener("click", function (e) {
+                if (window.__mmAppReady) return;
+                var t = tapTarget(e.target);
+                if (t) runPreBootAction(t, e);
+            }, true);
         }
         var form = document.getElementById("authForm");
         if (form && !form.__mmIphoneBound) {
@@ -209,6 +229,6 @@
     } else {
         bind();
     }
-    setTimeout(hideBoot, isIos ? 1500 : 4000);
-    setTimeout(hideBoot, 8000);
+    setTimeout(hideBoot, isIos ? 800 : 3000);
+    setTimeout(hideBoot, 6000);
 })();

@@ -33,7 +33,9 @@
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(59, 130, 246, 0.25); }
         button, .btn-primary, .btn-install, .btn-ghost, .nav-tab, .mm-shop-card,
-        .mm-saved-auth-item, .refresh-btn, .theme-toggle, a.hint-link {
+        .mm-saved-auth-item, .refresh-btn, .theme-toggle, a.hint-link,
+        .home-tile, .backup-dl-btn, .inv-scan-btn, .btn-pdf-featured, .btn-danger,
+        .mm-install-bar-btn, .inv-date-chip, .debt-sub-tab, .mm-shop-chip {
             touch-action: manipulation;
             cursor: pointer;
             -webkit-touch-callout: none;
@@ -923,7 +925,8 @@
         @supports (-webkit-touch-callout: none) {
             .app-topbar { backdrop-filter: none; -webkit-backdrop-filter: none; }
             .mm-modal { backdrop-filter: none; -webkit-backdrop-filter: none; }
-            button, .nav-tab, .btn-primary, .btn-install, .mm-shop-card {
+            button, .nav-tab, .btn-primary, .btn-install, .mm-shop-card,
+            .home-tile, .backup-dl-btn, .btn-pdf-featured, .btn-danger, .mm-install-bar-btn {
                 -webkit-user-select: none;
                 user-select: none;
             }

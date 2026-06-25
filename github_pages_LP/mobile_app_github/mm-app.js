@@ -1,5 +1,5 @@
-        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.48";
-        import * as mmSb from "./mm-supabase-sync.js?v=2.16.48";
+        import { mmPrintTodaySummary, mmShareTodaySummaryIos } from "./mm-pdf-report.js?v=2.16.49";
+        import * as mmSb from "./mm-supabase-sync.js?v=2.16.49";
 
         const MM_HUB_CACHE_KEY = "mm_hub_cache_v2";
         const MM_DATA_CACHE_KEY = "mm_data_cache_v3";
@@ -370,13 +370,13 @@
             }
             grid.innerHTML = html;
             grid.querySelectorAll("[data-mm-shop]").forEach(function (btn) {
-                btn.addEventListener("click", function () {
+                mmBindTap(btn, function () {
                     mmSwitchActiveShop(btn.getAttribute("data-mm-shop"));
                     switchMobileTab("dash");
                 });
             });
             const addCard = document.getElementById("mmShopCardAdd");
-            if (addCard) addCard.addEventListener("click", function () { mmOpenAddShopModal(); });
+            if (addCard) mmBindTap(addCard, function () { mmOpenAddShopModal(); });
         }
         function mmRenderShopSwitcher() {
             const bar = document.getElementById("mmShopSwitcher");
@@ -395,7 +395,7 @@
                     '<span class="mm-shop-chip-dot"></span><span>' + esc(mmShopLabel(acc)) + '</span></button>';
             }).join("");
             bar.querySelectorAll("[data-mm-chip]").forEach(function (btn) {
-                btn.addEventListener("click", function () { mmSwitchActiveShop(btn.getAttribute("data-mm-chip")); });
+                mmBindTap(btn, function () { mmSwitchActiveShop(btn.getAttribute("data-mm-chip")); });
             });
         }
         function mmRenderSavedAuthList() {
@@ -415,7 +415,7 @@
                         '<span style="font-size:0.72rem;color:#93c5fd;">چوونەژوورەوە <i class="fas fa-arrow-left"></i></span></button>';
                 }).join("");
             box.querySelectorAll("[data-mm-quick]").forEach(function (btn) {
-                btn.addEventListener("click", async function () {
+                mmBindTap(btn, async function () {
                     const acc = mmAccountByEmail(btn.getAttribute("data-mm-quick"));
                     if (!acc) return;
                     authMsg.textContent = "چاوەڕێ بکە…";
@@ -513,13 +513,13 @@
             html += '<button type="button" id="mmLogoutAllBtn" class="btn-danger" style="width:100%;margin-top:12px;"><i class="fas fa-power-off"></i> سڕینەوەی هەموو دووکانەکان</button>';
             body.innerHTML = html || '<p class="detail-empty">هیچ دووکانێک نییە.</p>';
             body.querySelectorAll("[data-mm-sw]").forEach(function (btn) {
-                btn.addEventListener("click", function () {
+                mmBindTap(btn, function () {
                     mmCloseShopModal();
                     mmSwitchActiveShop(btn.getAttribute("data-mm-sw"));
                 });
             });
             body.querySelectorAll("[data-mm-rm]").forEach(function (btn) {
-                btn.addEventListener("click", function () {
+                mmBindTap(btn, function () {
                     const em = btn.getAttribute("data-mm-rm");
                     if (!confirm("ئەم دووکانە لە لیست بسڕدرێتەوە؟")) return;
                     const wasActive = mmHubKey(em) === mmHubKey(activeChannelId);
@@ -533,7 +533,7 @@
                 });
             });
             const logoutAll = document.getElementById("mmLogoutAllBtn");
-            if (logoutAll) logoutAll.addEventListener("click", function () {
+            if (logoutAll) mmBindTap(logoutAll, function () {
                 if (!confirm("هەموو دووکانەکان دەسڕدرێنەوە لە ئامێرەکە. دڵنیایت؟")) return;
                 mmAccounts.slice().forEach(function (a) { mmTeardownHub(a.email); });
                 mmAccounts = [];
@@ -730,6 +730,56 @@
                 (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
         }
 
+        const mmIosPrefetch = new WeakMap();
+
+        function mmBindTap(el, handler) {
+            if (!el || typeof handler !== "function") return;
+            let last = 0;
+            function run(e) {
+                const now = Date.now();
+                if (now - last < 380) return;
+                last = now;
+                handler(e);
+            }
+            if (mmIsIos()) {
+                const st = { moved: false, x: 0, y: 0 };
+                el.addEventListener("touchstart", function (e) {
+                    st.moved = false;
+                    const t = e.touches && e.touches[0];
+                    if (t) { st.x = t.clientX; st.y = t.clientY; }
+                }, { passive: true });
+                el.addEventListener("touchmove", function (e) {
+                    const t = e.touches && e.touches[0];
+                    if (!t) return;
+                    if (Math.abs(t.clientX - st.x) > 12 || Math.abs(t.clientY - st.y) > 12) st.moved = true;
+                }, { passive: true });
+                el.addEventListener("touchend", function (e) {
+                    if (st.moved) return;
+                    e.preventDefault();
+                    run(e);
+                }, { passive: false });
+                return;
+            }
+            el.addEventListener("click", run);
+        }
+        window.mmBindTap = mmBindTap;
+
+        function mmIosShareBlob(blob, fileName, mime) {
+            const file = new File([blob], fileName, { type: mime || blob.type || "application/octet-stream" });
+            if (navigator.share) {
+                try {
+                    if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+                        return navigator.share({ files: [file], title: fileName });
+                    }
+                } catch (shareErr) { /* fallback below */ }
+            }
+            const url = URL.createObjectURL(blob);
+            const opened = window.open(url, "_blank");
+            if (!opened) window.location.href = url;
+            setTimeout(function () { URL.revokeObjectURL(url); }, 120000);
+            return Promise.resolve();
+        }
+
         function mmBackupFetchList(posBase, pin) {
             const fd = new FormData();
             fd.append("action", "mobile_list_backups");
@@ -758,15 +808,18 @@
                 btn.disabled = false;
                 btn.innerHTML = mmBackupDlLabel();
             };
-            mmBackupFetchDownload(posBase, pin, fileName)
-                .then(function (res) {
+            const cached = btn && mmIosPrefetch.get(btn);
+            const blobPromise = (cached && cached.name === fileName)
+                ? cached.promise
+                : mmBackupFetchDownload(posBase, pin, fileName).then(function (res) {
                     if (!res.ok) throw new Error("HTTP " + res.status);
                     return res.blob();
-                })
+                });
+            if (btn) mmIosPrefetch.delete(btn);
+            blobPromise
                 .then(function (blob) {
-                    const file = new File([blob], fileName, { type: blob.type || "application/zip" });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        return navigator.share({ files: [file], title: fileName });
+                    if (mmIsIos()) {
+                        return mmIosShareBlob(blob, fileName, blob.type || "application/zip");
                     }
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
@@ -784,7 +837,18 @@
         }
 
         function mmBindBackupDownload(btn, posBase, pin, fileName) {
-            btn.addEventListener("click", function (e) {
+            if (mmIsIos()) {
+                btn.addEventListener("touchstart", function () {
+                    mmIosPrefetch.set(btn, {
+                        name: fileName,
+                        promise: mmBackupFetchDownload(posBase, pin, fileName).then(function (res) {
+                            if (!res.ok) throw new Error("HTTP " + res.status);
+                            return res.blob();
+                        })
+                    });
+                }, { passive: true });
+            }
+            mmBindTap(btn, function (e) {
                 e.preventDefault();
                 mmDownloadBackupFile(posBase, pin, fileName, btn);
             });
@@ -901,11 +965,11 @@
             }
             if (btn && !btn.__mmBound) {
                 btn.__mmBound = true;
-                btn.addEventListener("click", loadLanBackups);
+                mmBindTap(btn, loadLanBackups);
             }
             if (safariBtn && !safariBtn.__mmBound) {
                 safariBtn.__mmBound = true;
-                safariBtn.addEventListener("click", function () { openPosBackupPage(true); });
+                mmBindTap(safariBtn, function () { openPosBackupPage(true); });
             }
             if (qs.get("mm_auto") === "1" || location.hash === "#backup") {
                 setTimeout(function () {
@@ -2060,6 +2124,29 @@
             if (pdfBtn) { pdfBtn.disabled = true; pdfBtn.classList.add("spinning"); }
             if (homePdfBtn) homePdfBtn.disabled = true;
             try {
+                if (mmIsIos()) {
+                    if (!mmSnapDashboard) {
+                        showRefreshToast("هێشتا داتا نییە — Refresh بکە", true);
+                        return;
+                    }
+                    const acc = mmAccountByEmail(activeChannelId);
+                    await mmShareTodaySummaryIos({
+                        shopLabel: mmShopLabel(acc || { email: activeChannelId }),
+                        shopEmail: activeChannelId,
+                        dayKey: mmSnapDetailDayKey || getMobileDetailDayKey(),
+                        dashboard: mmSnapDashboard,
+                        detail: mmSnapDetail || {},
+                        privacy: mmPrivacyFromDoc(Object.assign({}, mmSnapDashboard || {}, mmSnapDetail || {})),
+                        inv: mmSnapInvSummary || {},
+                        debt: mmSnapDebtSummary || {},
+                        currency: getMobileDisplayCurrency(),
+                        version: window.MM_APP_VERSION || "",
+                        formatMoney: formatMoneyIqd,
+                        esc: esc
+                    });
+                    showRefreshToast("Share → Save to Files / Print", false);
+                    return;
+                }
                 if (navigator.onLine && !refreshBusy) {
                     await manualRefreshAll({ silent: true });
                 }
@@ -2249,37 +2336,37 @@
             updateThemeIcon();
         };
         updateThemeIcon();
-        if (themeBtn) themeBtn.addEventListener("click", () => window.mmThemeToggle());
+        mmBindTap(themeBtn, () => window.mmThemeToggle());
 
         document.getElementById("authForm").addEventListener("submit", (ev) => { ev.preventDefault(); doLogin(); });
         const loginBtn = document.getElementById("loginBtn");
-        if (loginBtn) loginBtn.addEventListener("click", (ev) => { ev.preventDefault(); doLogin(); });
-        if (tabHomeBtn) tabHomeBtn.addEventListener("click", () => switchMobileTab("home"));
-        if (tabDashBtn) tabDashBtn.addEventListener("click", () => switchMobileTab("dash"));
-        if (tabInvBtn) tabInvBtn.addEventListener("click", () => switchMobileTab("inv"));
-        if (tabDebtBtn) tabDebtBtn.addEventListener("click", () => switchMobileTab("debt"));
+        mmBindTap(loginBtn, (ev) => { ev.preventDefault(); doLogin(); });
+        mmBindTap(tabHomeBtn, () => switchMobileTab("home"));
+        mmBindTap(tabDashBtn, () => switchMobileTab("dash"));
+        mmBindTap(tabInvBtn, () => switchMobileTab("inv"));
+        mmBindTap(tabDebtBtn, () => switchMobileTab("debt"));
         const homeGoDash = document.getElementById("homeGoDash");
         const homeGoInv = document.getElementById("homeGoInv");
         const homeGoDebt = document.getElementById("homeGoDebt");
-        if (homeGoDash) homeGoDash.addEventListener("click", () => switchMobileTab("dash"));
-        if (homeGoInv) homeGoInv.addEventListener("click", () => switchMobileTab("inv"));
-        if (homeGoDebt) homeGoDebt.addEventListener("click", () => switchMobileTab("debt"));
+        mmBindTap(homeGoDash, () => switchMobileTab("dash"));
+        mmBindTap(homeGoInv, () => switchMobileTab("inv"));
+        mmBindTap(homeGoDebt, () => switchMobileTab("debt"));
         const homeGoBackup = document.getElementById("homeGoBackup");
-        if (homeGoBackup) homeGoBackup.addEventListener("click", () => switchMobileTab("backup"));
+        mmBindTap(homeGoBackup, () => switchMobileTab("backup"));
         const homeGoPdf = document.getElementById("homeGoPdf");
-        if (homeGoPdf) homeGoPdf.addEventListener("click", () => mmExportTodayPdfReport());
+        mmBindTap(homeGoPdf, () => mmExportTodayPdfReport());
         const mmPdfTodayBtn = document.getElementById("mmPdfTodayBtn");
-        if (mmPdfTodayBtn) mmPdfTodayBtn.addEventListener("click", () => mmExportTodayPdfReport());
-        document.getElementById("logoutBtn").addEventListener("click", () => mmSbLogoutUi());
+        mmBindTap(mmPdfTodayBtn, () => mmExportTodayPdfReport());
+        mmBindTap(document.getElementById("logoutBtn"), () => mmSbLogoutUi());
         const logoutBtnHome = document.getElementById("logoutBtnHome");
-        if (logoutBtnHome) logoutBtnHome.addEventListener("click", () => mmSbLogoutUi());
+        mmBindTap(logoutBtnHome, () => mmSbLogoutUi());
         const mmAddShopBtn = document.getElementById("mmAddShopBtn");
         const mmManageShopsBtn = document.getElementById("mmManageShopsBtn");
         const mmShopModalClose = document.getElementById("mmShopModalClose");
         const mmShopModal = document.getElementById("mmShopModal");
-        if (mmAddShopBtn) mmAddShopBtn.addEventListener("click", mmOpenAddShopModal);
-        if (mmManageShopsBtn) mmManageShopsBtn.addEventListener("click", mmOpenManageShopsModal);
-        if (mmShopModalClose) mmShopModalClose.addEventListener("click", mmCloseShopModal);
+        mmBindTap(mmAddShopBtn, mmOpenAddShopModal);
+        mmBindTap(mmManageShopsBtn, mmOpenManageShopsModal);
+        mmBindTap(mmShopModalClose, mmCloseShopModal);
         if (mmShopModal) {
             mmShopModal.addEventListener("click", function (e) {
                 if (e.target === mmShopModal) mmCloseShopModal();
@@ -2292,14 +2379,14 @@
             try { await navigator.clipboard.writeText(txt); }
             catch (_) { window.prompt("ئیمێیل کۆپی بکە:", txt); }
         }
-        document.getElementById("copyEmailBtn").addEventListener("click", copyUserEmail);
+        mmBindTap(document.getElementById("copyEmailBtn"), copyUserEmail);
         const copyEmailBtnHome = document.getElementById("copyEmailBtnHome");
-        if (copyEmailBtnHome) copyEmailBtnHome.addEventListener("click", copyUserEmail);
+        mmBindTap(copyEmailBtnHome, copyUserEmail);
 
         const invScanBtn = document.getElementById("invScanBtn");
-        if (invScanBtn) invScanBtn.addEventListener("click", () => openInvScanner());
+        mmBindTap(invScanBtn, () => openInvScanner());
         const invScannerClose = document.getElementById("invScannerClose");
-        if (invScannerClose) invScannerClose.addEventListener("click", () => closeInvScanner());
+        mmBindTap(invScannerClose, () => closeInvScanner());
         const invScannerModal = document.getElementById("invScannerModal");
         if (invScannerModal) {
             invScannerModal.addEventListener("click", (e) => {
@@ -2391,9 +2478,9 @@
                 }
                 mmOpenInstallHelp();
             }
-            if (btnAuth) btnAuth.addEventListener("click", runInstall);
-            if (btnHome) btnHome.addEventListener("click", runInstall);
-            if (barBtn) barBtn.addEventListener("click", runInstall);
+            if (btnAuth) mmBindTap(btnAuth, runInstall);
+            if (btnHome) mmBindTap(btnHome, runInstall);
+            if (barBtn) mmBindTap(barBtn, runInstall);
             mmRefreshInstallBar();
         }
 
@@ -2423,11 +2510,11 @@
         setupPullToRefresh();
 
         if (refreshBtn) {
-            refreshBtn.addEventListener("click", function () { manualRefreshAll({ silent: false }); });
+            mmBindTap(refreshBtn, function () { manualRefreshAll({ silent: false }); });
         }
         const dashRefreshBtn = document.getElementById("dashRefreshBtn");
         if (dashRefreshBtn) {
-            dashRefreshBtn.addEventListener("click", function () { manualRefreshAll({ silent: false }); });
+            mmBindTap(dashRefreshBtn, function () { manualRefreshAll({ silent: false }); });
         }
         window.addEventListener("online", function () {
             if (activeChannelId) {
