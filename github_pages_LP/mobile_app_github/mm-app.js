@@ -1,5 +1,5 @@
-        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.42";
-        import * as mmSb from "./mm-supabase-sync.js?v=2.16.42";
+        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.48";
+        import * as mmSb from "./mm-supabase-sync.js?v=2.16.48";
 
         const MM_HUB_CACHE_KEY = "mm_hub_cache_v2";
         const MM_DATA_CACHE_KEY = "mm_data_cache_v3";
