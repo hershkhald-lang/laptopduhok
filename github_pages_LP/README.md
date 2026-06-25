@@ -40,7 +40,7 @@ Settings â†’ Pages â†’ Branch: main â†’ Folder: **/github_pages_L
 
 1. Ù‡Û•Ù…ÙˆÙˆ Ù†Ø§ÙˆÛ•Ú•Û†Ú©ÛŒ Ø¦Û•Ù… ÙÛ†ÚµØ¯Û•Ø±Û• upload Ø¨Ú©Û• ÛŒØ§Ù† push Ø¨Ú©Û•
 2. Settings â†’ Pages â†’ Deploy from branch `main`
-3. Firebase + Supabase â†’ Authorized domains â†’ `USER.github.io`
+3. Supabase â†’ Authentication â†’ URL Configuration â†’ `USER.github.io`
 
 ## Ù†ÙˆÛŽÚ©Ø±Ø¯Ù†Û•ÙˆÛ• Ù„Û• POS
 

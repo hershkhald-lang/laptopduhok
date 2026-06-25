@@ -1,5 +1,5 @@
 /**
- * Mobile Manager — Supabase read/sync (alternative to Firebase Firestore).
+ * Mobile Manager — Supabase read/sync (realtime + REST).
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -7,7 +7,7 @@ let sb = null;
 let sbCfg = null;
 
 export function mmSbEnabled() {
-    const backend = String(window.MM_SYNC_BACKEND || "both").toLowerCase();
+    const backend = String(window.MM_SYNC_BACKEND || "supabase").toLowerCase();
     if (backend === "firebase") return false;
     const c = window.POS_SUPABASE_MOBILE || {};
     return !!(c.enabled && c.url && c.anonKey);
@@ -151,6 +151,17 @@ export function mmSbBindDetail(channelId, dayKey, onData, onErr) {
         })
         .subscribe();
     return function () { try { client.removeChannel(rt); } catch (e) {} };
+}
+
+export function mmSbOnAuthStateChange(cb) {
+    const client = mmSbClient();
+    if (!client) return function () {};
+    const sub = client.auth.onAuthStateChange(function (_event, session) {
+        cb(session && session.user ? session.user : null);
+    });
+    return function () {
+        try { sub.data.subscription.unsubscribe(); } catch (e) {}
+    };
 }
 
 export async function mmSbFetchAll(channelId, dayKey) {
