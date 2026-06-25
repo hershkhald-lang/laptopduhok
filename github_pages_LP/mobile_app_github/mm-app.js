@@ -1,7 +1,8 @@
-        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.36";
-        import * as mmSb from "./mm-supabase-sync.js?v=2.16.36";
+        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.37";
+        import * as mmSb from "./mm-supabase-sync.js?v=2.16.37";
 
         const MM_HUB_CACHE_KEY = "mm_hub_cache_v2";
+        const MM_DATA_CACHE_KEY = "mm_data_cache_v3";
         if (!window.POS_SUPABASE_MOBILE || !window.POS_SUPABASE_MOBILE.url) {
             const m = document.getElementById("authMsg");
             if (m) m.textContent = "Supabase config نییە.";
@@ -134,6 +135,36 @@
                 all[mmHubKey(email)] = { dash: dash || null, invFull: invFull || null, ts: Date.now() };
                 localStorage.setItem(MM_HUB_CACHE_KEY, JSON.stringify(all));
             } catch (e) {}
+        }
+        function mmDataCacheLoad(email) {
+            try {
+                const raw = localStorage.getItem(MM_DATA_CACHE_KEY);
+                const all = raw ? JSON.parse(raw) : {};
+                return all[mmHubKey(email)] || null;
+            } catch (e) { return null; }
+        }
+        function mmDataCacheSave(email, pack) {
+            if (!email || !pack) return;
+            try {
+                const raw = localStorage.getItem(MM_DATA_CACHE_KEY);
+                const all = raw ? JSON.parse(raw) : {};
+                all[mmHubKey(email)] = Object.assign({ ts: Date.now() }, pack);
+                localStorage.setItem(MM_DATA_CACHE_KEY, JSON.stringify(all));
+            } catch (e) {}
+        }
+        function mmApplyDataPack(pack, dayKey, opts) {
+            if (!pack) return;
+            opts = opts || {};
+            if (pack.dashboard) applyDashboardData(pack.dashboard, { silent: true, fromCache: !!opts.fromCache, cacheTs: opts.cacheTs });
+            if (pack.inventory) applyInventoryData(pack.inventory);
+            if (pack.debt) applyDebtData(pack.debt);
+            if (pack.detail) applyDetailData(pack.detail, dayKey || pack.dayKey || getMobileDetailDayKey());
+        }
+        function mmRestoreFromCache(channelId) {
+            const c = mmDataCacheLoad(channelId);
+            if (!c) return false;
+            mmApplyDataPack(c, c.dayKey, { fromCache: true, cacheTs: c.ts });
+            return true;
         }
         function mmSyncActiveHub(dash, invFull) {
             if (!activeChannelId) return;
@@ -1851,6 +1882,12 @@
                 if (isStale && navigator.onLine) setStatus("داتا کۆنە — لە POS sync بکە", false);
                 else setStatus(navigator.onLine ? "پەیوەست" : "ئۆفلاین", navigator.onLine);
             }
+            if (opts.fromCache && metaEl) {
+                const age = opts.cacheTs ? Math.round((Date.now() - opts.cacheTs) / 60000) : null;
+                metaEl.innerHTML = '<i class="fas fa-database"></i> داتای پاشەکەوت' +
+                    (age != null ? ' · ' + age + ' خولەک لەمەوپێش' : '') +
+                    (navigator.onLine ? ' · نوێکردنەوە…' : ' · ئۆفلاین');
+            }
             mmSnapDashboard = Object.assign({}, d);
             mmSyncActiveHub(d, null);
         }
@@ -2027,8 +2064,14 @@
             opts = opts || {};
             if (!activeChannelId || refreshBusy) return;
             if (!navigator.onLine) {
-                showRefreshToast("ئۆفلاین — ئینتەرنێت پێویستە", true);
-                setStatus("ئۆفلاین", false);
+                const c = mmDataCacheLoad(activeChannelId);
+                if (mmRestoreFromCache(activeChannelId)) {
+                    setStatus("ئۆفلاین — داتای پاشەکەوت", false);
+                    if (!opts.silent) showRefreshToast("ئۆفلاین — کۆی کۆتایی پیشاندرا", false);
+                } else {
+                    showRefreshToast("ئۆفلاین — ئینتەرنێت پێویستە", true);
+                    setStatus("ئۆفلاین", false);
+                }
                 return;
             }
             refreshBusy = true;
@@ -2040,12 +2083,25 @@
                 applyInventoryData(pack.inventory);
                 applyDebtData(pack.debt);
                 applyDetailData(pack.detail, dayKey);
+                mmDataCacheSave(activeChannelId, {
+                    dayKey: dayKey,
+                    dashboard: pack.dashboard,
+                    inventory: pack.inventory,
+                    debt: pack.debt,
+                    detail: pack.detail
+                });
                 await mmRefreshAllHubs();
                 setStatus("پەیوەست", true);
                 if (!opts.silent) showRefreshToast("داتا نوێکرایەوە ✓", false);
             } catch (e) {
-                setStatus("هەڵەی Supabase", false);
-                showRefreshToast("Refresh سەرنەکەوت", true);
+                const c = mmDataCacheLoad(activeChannelId);
+                if (c && mmRestoreFromCache(activeChannelId)) {
+                    setStatus("تۆڕ لاواز — داتای کۆن", false);
+                    if (!opts.silent) showRefreshToast("تۆڕ لاواز — داتای پاشەکەوت پیشاندرا", true);
+                } else {
+                    setStatus("هەڵەی Supabase", false);
+                    if (!opts.silent) showRefreshToast("Refresh سەرنەکەوت — دووبارە هەوڵ بدە", true);
+                }
             } finally {
                 refreshBusy = false;
                 if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.classList.remove("spinning"); }
@@ -2319,7 +2375,10 @@
             dashRefreshBtn.addEventListener("click", function () { manualRefreshAll({ silent: false }); });
         }
         window.addEventListener("online", function () {
-            if (activeChannelId) setStatus("پەیوەست", true);
+            if (activeChannelId) {
+                setStatus("پەیوەست", true);
+                manualRefreshAll({ silent: true });
+            }
         });
         window.addEventListener("offline", function () {
             if (activeChannelId) setStatus("ئۆفلاین", false);
@@ -2378,6 +2437,7 @@
             switchMobileTab(savedTab === "backup" ? "backup" : savedTab === "debt" ? "debt" : savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
             activeChannelId = em;
             mmSetActiveEmail(em);
+            mmRestoreFromCache(em);
             if (passEl && passEl.value) {
                 const upsertLive = mmUpsertAccount(em, passEl.value, "");
                 if (upsertLive.ok) mmStartHubForAccount(upsertLive.acc);
@@ -2390,7 +2450,7 @@
             bindDebt(em);
             bindBackups(em);
             setStatus(navigator.onLine ? "پەیوەست" : "ئۆفلاین", navigator.onLine);
-            setTimeout(function () { manualRefreshAll({ silent: true }); }, 400);
+            setTimeout(function () { manualRefreshAll({ silent: true }); }, 150);
         }
 
         mmSb.mmSbOnAuthStateChange(function (user) {
