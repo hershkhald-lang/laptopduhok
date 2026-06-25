@@ -1,14 +1,43 @@
-        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.37";
-        import * as mmSb from "./mm-supabase-sync.js?v=2.16.37";
+        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.16.41";
+        import * as mmSb from "./mm-supabase-sync.js?v=2.16.41";
 
         const MM_HUB_CACHE_KEY = "mm_hub_cache_v2";
         const MM_DATA_CACHE_KEY = "mm_data_cache_v3";
-        if (!window.POS_SUPABASE_MOBILE || !window.POS_SUPABASE_MOBILE.url) {
-            const m = document.getElementById("authMsg");
-            if (m) m.textContent = "Supabase config نییە.";
-            throw new Error("Missing POS_SUPABASE_MOBILE");
+
+        let mmSbBootOk = false;
+        const mmSbBootPromise = (async function mmSbBootAsync() {
+            if (!window.POS_SUPABASE_MOBILE || !window.POS_SUPABASE_MOBILE.url) {
+                const m = document.getElementById("authMsg");
+                if (m) m.textContent = "Supabase config نییە.";
+                return false;
+            }
+            try {
+                await mmSb.mmSbEnsureReady();
+                await mmSb.mmSbInit(window.POS_SUPABASE_MOBILE);
+                mmSbBootOk = true;
+                return true;
+            } catch (sdkErr) {
+                const m = document.getElementById("authMsg");
+                if (m) {
+                    m.innerHTML = "نەتوانرا Supabase باربکرێت — دووبارە refresh بکە.<br><small>iPhone: Safari · WiFi/4G بپشکنە</small>";
+                }
+                return false;
+            }
+        })();
+
+        async function mmAwaitSb() {
+            await mmSbBootPromise;
+            if (!mmSbBootOk) throw new Error("supabase_not_ready");
         }
-        mmSb.mmSbInit(window.POS_SUPABASE_MOBILE);
+
+        (function mmWarnInAppBrowser() {
+            const ua = String(navigator.userAgent || "");
+            if (!/FBAN|FBAV|Instagram|Line\/|Twitter|Snapchat/i.test(ua)) return;
+            const w = document.createElement("div");
+            w.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:99998;background:#dc2626;color:#fff;padding:12px 14px;font-size:0.8rem;line-height:1.5;text-align:center;";
+            w.innerHTML = "⚠️ لە <strong>Chrome</strong> (Android) یان <strong>Safari</strong> (iPhone) بیکەرەوە — وێبگەڕی ناو ئەپ کار ناکات.";
+            document.body.prepend(w);
+        })();
 
         if (location.pathname.indexOf("/github_pages_LP/") >= 0) {
             const warn = document.createElement("div");
@@ -194,6 +223,7 @@
             setStatus("پەیوەست نییە", false);
             mmRenderSavedAuthList();
         }
+        window.mmLogoutUi = mmSbLogoutUi;
         function mmTeardownPrimaryListeners() {
             if (unsub) { unsub(); unsub = null; }
             if (unsubDetail) { unsubDetail(); unsubDetail = null; }
@@ -629,6 +659,7 @@
             try { localStorage.setItem("pos_mobile_tab", t); } catch (e) {}
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
+        window.mmSwitchMobileTab = switchMobileTab;
 
         function formatBackupBytes(n) {
             n = Number(n) || 0;
@@ -2184,6 +2215,7 @@
             }
             authMsg.textContent = "چاوەڕێ بکە…";
             try {
+                await mmAwaitSb();
                 const res = await mmSb.mmSbSignIn(email, password);
                 if (res.error) throw res.error;
                 const upsertSb = mmUpsertAccount(email, password, "");
@@ -2193,26 +2225,31 @@
                     authMsg.textContent = "";
                 }
             } catch (e) {
-                const msg = e && e.message ? e.message : "Unknown error";
+                const msg = e && e.message === "supabase_not_ready"
+                    ? "هاوپەیوانی Supabase — چاوەڕێ بکە یان refresh"
+                    : (e && e.message ? e.message : "Unknown error");
                 authMsg.textContent = "چوونەژوورەوە سەرنەکەوت: " + msg;
             }
         }
+        window.mmDoLogin = doLogin;
 
         const themeBtn = document.getElementById("themeToggleBtn");
         const themeIcon = document.getElementById("themeIcon");
         function updateThemeIcon() {
+            if (!themeIcon) return;
             const isLight = document.documentElement.getAttribute("data-theme") === "light";
             themeIcon.className = isLight ? "fas fa-moon" : "fas fa-sun";
             themeIcon.style.color = isLight ? "#2563eb" : "#fbbf24";
         }
-        updateThemeIcon();
-        themeBtn.addEventListener("click", () => {
+        window.mmThemeToggle = function mmThemeToggle() {
             const newTheme = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
             if (newTheme === "light") document.documentElement.setAttribute("data-theme", "light");
             else document.documentElement.removeAttribute("data-theme");
             localStorage.setItem("pos_mobile_theme", newTheme);
             updateThemeIcon();
-        });
+        };
+        updateThemeIcon();
+        if (themeBtn) themeBtn.addEventListener("click", () => window.mmThemeToggle());
 
         document.getElementById("authForm").addEventListener("submit", (ev) => { ev.preventDefault(); doLogin(); });
         if (tabHomeBtn) tabHomeBtn.addEventListener("click", () => switchMobileTab("home"));
@@ -2289,14 +2326,29 @@
             }
         }
 
+        function mmIsIosDevice() {
+            if (window.__MM_IS_IOS) return true;
+            return /iPad|iPhone|iPod/.test(navigator.userAgent || "") ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        }
+
         function mmRefreshInstallBar() {
             const bar = document.getElementById("mmInstallBar");
+            const iosBanner = document.getElementById("mmIosBanner");
+            if (iosBanner) {
+                if (mmIsIosDevice() && !isStandalone) iosBanner.classList.remove("hidden");
+                else iosBanner.classList.add("hidden");
+            }
             if (!bar) return;
             if (isStandalone || !isMobileUa) {
                 bar.classList.add("hidden");
                 return;
             }
             bar.classList.remove("hidden");
+            const txt = bar.querySelector(".mm-install-bar-text");
+            if (txt && mmIsIosDevice()) {
+                txt.innerHTML = '<i class="fab fa-apple"></i> iPhone: Add to Home Screen';
+            }
         }
 
         function setupInstallUi() {
@@ -2319,6 +2371,7 @@
             if (isIos) {
                 if (iosAuth) iosAuth.classList.remove("hidden");
                 if (androidAuth) androidAuth.classList.add("hidden");
+                if (btnAuth) btnAuth.classList.add("hidden");
             } else {
                 if (androidAuth) androidAuth.classList.remove("hidden");
                 if (iosAuth) iosAuth.classList.add("hidden");
@@ -2390,6 +2443,7 @@
         });
 
         function mmRegisterServiceWorker() {
+            if (mmIsIosDevice()) return;
             if (!("serviceWorker" in navigator)) return;
             var ver = String(window.MM_APP_VERSION || "1");
             var swUrl = "./sw.js?v=" + encodeURIComponent(ver);
@@ -2464,19 +2518,27 @@
         });
 
         (function mmTryAutoLogin() {
-            mmLoadAccounts();
-            if (!mmAccounts.length) return;
-            const target = mmAccountByEmail(mmGetActiveEmail()) || mmAccounts[0];
-            if (!target) return;
-            mmSb.mmSbGetSessionEmail().then(function (cur) {
-                if (cur) {
-                    mmEnterLoggedInUi(cur);
-                    return;
-                }
-                mmSb.mmSbSignIn(target.email, mmDecodeSecret(target.passEnc))
-                    .then(function (res) {
-                        if (res.error) return;
-                        mmEnterLoggedInUi(target.email);
-                    }).catch(function () {});
+            mmSbBootPromise.then(function () {
+                if (!mmSbBootOk) return;
+                mmLoadAccounts();
+                if (!mmAccounts.length) return;
+                const target = mmAccountByEmail(mmGetActiveEmail()) || mmAccounts[0];
+                if (!target) return;
+                mmSb.mmSbGetSessionEmail().then(function (cur) {
+                    if (cur) {
+                        mmEnterLoggedInUi(cur);
+                        return;
+                    }
+                    mmSb.mmSbSignIn(target.email, mmDecodeSecret(target.passEnc))
+                        .then(function (res) {
+                            if (res.error) return;
+                            mmEnterLoggedInUi(target.email);
+                        }).catch(function () {});
+                });
             });
         })();
+
+        window.mmDoLogin = doLogin;
+        window.__mmAppReady = true;
+        const mmBootOverlay = document.getElementById("mmBootOverlay");
+        if (mmBootOverlay) mmBootOverlay.classList.add("hidden");
