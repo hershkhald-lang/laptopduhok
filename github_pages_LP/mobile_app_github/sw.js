@@ -2,13 +2,13 @@
  * PWA service worker — Mobile Manager (_PRIVATE/mobile_manager/)
  * CACHE_NAME must change on every release so installed PWAs fetch fresh shell.
  */
-const MM_SW_VERSION = "2.16.49";
+const MM_SW_VERSION = "2.16.58";
 const CACHE_NAME = "ld-manager-pwa-" + MM_SW_VERSION.replace(/\./g, "-");
 const SHELL = [
     "./index.html",
+    "./mm-snapshot-store.js?v=" + MM_SW_VERSION,
     "./mm-app.css?v=" + MM_SW_VERSION,
     "./mm-app.js?v=" + MM_SW_VERSION,
-    "./mm-supabase-sync.js?v=" + MM_SW_VERSION,
     "./mm-pdf-report.js",
     "./backup.html",
     "./manifest.json?v=" + MM_SW_VERSION,
@@ -16,10 +16,7 @@ const SHELL = [
     "./assets/icons/icon-192.png",
     "./assets/icons/icon-512.png",
     "./assets/icons/apple-touch-icon.png",
-    "./assets/icons/favicon-32.png",
-    "./assets/vendor/mm-ios-boot.js?v=" + MM_SW_VERSION,
-    "./assets/vendor/mm-iphone-touch.js?v=" + MM_SW_VERSION,
-    "./assets/vendor/supabase.umd.js"
+    "./assets/icons/favicon-32.png"
 ];
 
 function mmIsAppPath(path) {
@@ -35,6 +32,7 @@ function mmIsAppPath(path) {
 function mmIsMutableAsset(path) {
     return (
         path.indexOf("mm-app.") !== -1 ||
+        path.indexOf("mm-snapshot-store.") !== -1 ||
         path.endsWith("index.html") ||
         path.indexOf("sw.js") !== -1 ||
         path.indexOf("manifest.json") !== -1
