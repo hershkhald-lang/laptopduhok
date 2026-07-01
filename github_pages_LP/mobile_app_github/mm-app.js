@@ -1,5 +1,5 @@
 import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
         import {
             initializeFirestore,
             persistentLocalCache,
@@ -29,6 +29,7 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        setPersistence(auth, browserLocalPersistence).catch(function () {});
         let db;
         try {
             db = initializeFirestore(app, {
@@ -719,7 +720,8 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
         }
 
         function switchMobileTab(tab) {
-            const t = tab === "backup" ? "backup" : tab === "debt" ? "debt" : tab === "inv" ? "inv" : tab === "dash" ? "dash" : "home";
+            let t = tab === "backup" ? "backup" : tab === "debt" ? "debt" : tab === "inv" ? "inv" : tab === "dash" ? "dash" : "home";
+            if (t === "backup" && mmIsCloudApp()) t = "home";
             if (panelHome) panelHome.classList.toggle("hidden", t !== "home");
             if (panelDash) panelDash.classList.toggle("hidden", t !== "dash");
             if (panelInv) panelInv.classList.toggle("hidden", t !== "inv");
@@ -753,6 +755,30 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
         function mmIsGithubPages() {
             return /\.github\.io$/i.test(location.hostname || "");
         }
+
+        /** Cloud/PWA app — Firebase only; no LAN IP or backup PIN. */
+        function mmIsCloudApp() {
+            if (mmIsGithubPages()) return true;
+            try {
+                return !guessPosApiBase();
+            } catch (e) {
+                return true;
+            }
+        }
+
+        function mmApplyCloudOnlyUi() {
+            if (!mmIsCloudApp()) return;
+            ["homeGoBackup", "panelBackup"].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) el.classList.add("hidden");
+            });
+            try {
+                if (localStorage.getItem("pos_mobile_tab") === "backup") {
+                    localStorage.setItem("pos_mobile_tab", "home");
+                }
+            } catch (e) {}
+        }
+        mmApplyCloudOnlyUi();
 
         function guessPosApiBase() {
             if (mmIsGithubPages()) return "";
@@ -958,6 +984,7 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
         }
 
         function initMobileBackupUi() {
+            if (mmIsCloudApp()) return;
             const urlEl = document.getElementById("mmPosUrl");
             const pinEl = document.getElementById("mmBackupPin");
             const btn = document.getElementById("mmLoadBackupsBtn");
@@ -2796,8 +2823,14 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
             if (bottomNav) bottomNav.classList.remove("hidden");
             const homeEmail = document.getElementById("homeEmail");
             if (homeEmail) homeEmail.textContent = user.email;
-            const savedTab = (function () { try { return localStorage.getItem("pos_mobile_tab") || "home"; } catch (e) { return "home"; } })();
-            switchMobileTab(savedTab === "backup" ? "backup" : savedTab === "debt" ? "debt" : savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
+            const savedTab = (function () {
+                try {
+                    const v = localStorage.getItem("pos_mobile_tab") || "home";
+                    if (v === "backup" && mmIsCloudApp()) return "home";
+                    return v;
+                } catch (e) { return "home"; }
+            })();
+            switchMobileTab(savedTab === "debt" ? "debt" : savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
             const channelId = user.email.toLowerCase();
             activeChannelId = channelId;
             mmLoadCachedBusinessMeta(channelId);
