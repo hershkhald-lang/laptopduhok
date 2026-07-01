@@ -1,43 +1,25 @@
-# Mobile Manager — Laptop Duhok POS
+# Mobile Manager — تەنها سەرچاوە (_PRIVATE)
 
-ئەپلیکەیشنی **بەڕێوەبەری موبایل** (داشبۆرد · کۆگە · جەرد).
+هەموو فایلەکانی ئەپ لێرەن. **هیچ کۆپییەک** لە `public/mobile_manager/` نییە.
 
-## فولدەری سەرەکی لە POS
-
-هەموو فایلەکان لە:
-
-`public/mobile_manager/`
+## تاقیکردنەوە (localhost)
 
 ```
-mobile_manager/
-├── index.html          ← ئەپەکە
-├── manifest.json       ← PWA
-├── sw.js               ← Service Worker
-└── assets/brand/
-    └── laptop-duhok-logo.png
+http://localhost/pos/_PRIVATE/mobile_manager/
 ```
 
-## لینک (XAMPP)
+## GitHub (بۆ کڕیار)
 
-http://localhost/pos/public/mobile_manager/
+```powershell
+.\_PRIVATE\scripts\build-github-lp.ps1
+```
 
-(لینکی کۆن `manager_mobile.html` خۆکار دەگوازرێتەوە.)
+Upload: `_PRIVATE/github_pages_LP/` → repo `laptopduhokpos/LP`
 
-## GitHub Pages
+## پاکێجی shop
 
-ئەم فۆڵدەرە (`mobile_app_github`) هەمان ناوەڕۆکی `public/mobile_manager/` ـە.
+```powershell
+.\_PRIVATE\scripts\build-shop-package.ps1
+```
 
-**لینکی دروست:**
-`https://hershkhald-lang.github.io/laptopduhok/mobile_app_github/`
-
-1. فایلەکانی ئەم فۆڵدەرە upload بکە بۆ GitHub repo (`mobile_app_github/`)
-2. Settings → Pages → branch `main`
-3. Firebase → Authorized domains: `hershkhald-lang.github.io`
-
-**دوای هەر نوێکردنەوە:** لە موبایل hard refresh (`Ctrl+Shift+R`) یان PWA لاببە و دووبارە زیاد بکە — service worker کاش دەکات.
-
-## POS sync
-
-لە POS: ڕێکخستن → Firebase sync (تەنها خوێndنەوە — مەخزەن ناگۆڕێت)
-
-EOF
+تەنها `backup.html` دەچێتە `public/mobile_manager/` لە ناو ZIPـی کڕیار.

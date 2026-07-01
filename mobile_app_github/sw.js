@@ -1,16 +1,43 @@
 /**
- * PWA service worker — Mobile Manager (public/mobile_manager/)
+ * PWA service worker — Mobile Manager (_PRIVATE/mobile_manager/)
+ * CACHE_NAME must change on every release so installed PWAs fetch fresh shell.
  */
-const CACHE_NAME = "ld-manager-pwa-v20";
+const MM_SW_VERSION = "2.16.58";
+const CACHE_NAME = "ld-manager-pwa-" + MM_SW_VERSION.replace(/\./g, "-");
 const SHELL = [
     "./index.html",
-    "./manifest.json",
+    "./mm-snapshot-store.js?v=" + MM_SW_VERSION,
+    "./mm-app.css?v=" + MM_SW_VERSION,
+    "./mm-app.js?v=" + MM_SW_VERSION,
+    "./mm-pdf-report.js",
+    "./backup.html",
+    "./manifest.json?v=" + MM_SW_VERSION,
     "./assets/brand/laptop-duhok-logo.png",
     "./assets/icons/icon-192.png",
     "./assets/icons/icon-512.png",
     "./assets/icons/apple-touch-icon.png",
     "./assets/icons/favicon-32.png"
 ];
+
+function mmIsAppPath(path) {
+    return (
+        path.indexOf("mobile_manager") !== -1 ||
+        path.indexOf("mobile_app_github") !== -1 ||
+        path.indexOf("github_pages_LP") !== -1 ||
+        /\/LP\/?$/i.test(path) ||
+        /\/LP\//i.test(path)
+    );
+}
+
+function mmIsMutableAsset(path) {
+    return (
+        path.indexOf("mm-app.") !== -1 ||
+        path.indexOf("mm-snapshot-store.") !== -1 ||
+        path.endsWith("index.html") ||
+        path.indexOf("sw.js") !== -1 ||
+        path.indexOf("manifest.json") !== -1
+    );
+}
 
 self.addEventListener("install", function (event) {
     self.skipWaiting();
@@ -45,22 +72,41 @@ self.addEventListener("activate", function (event) {
     );
 });
 
+self.addEventListener("message", function (event) {
+    if (event.data && event.data.type === "SKIP_WAITING") {
+        self.skipWaiting();
+    }
+});
+
 self.addEventListener("fetch", function (event) {
     var req = event.request;
     if (req.method !== "GET") return;
     var url = new URL(req.url);
     if (url.origin !== self.location.origin) return;
+    if (!mmIsAppPath(url.pathname)) return;
 
-    var path = url.pathname;
-    var isShell =
-        (path.indexOf("mobile_manager") !== -1 || path.indexOf("mobile_app_github") !== -1) &&
-        (path.endsWith("index.html") ||
-            path.endsWith("/mobile_manager/") ||
-            path.endsWith("/mobile_app_github/") ||
-            path.indexOf("manifest.json") !== -1 ||
-            path.indexOf("laptop-duhok-logo") !== -1);
+    var path = url.pathname + url.search;
 
-    if (!isShell) return;
+    if (mmIsMutableAsset(path)) {
+        event.respondWith(
+            fetch(req, { cache: "no-store" })
+                .then(function (res) {
+                    if (res && res.ok) {
+                        var copy = res.clone();
+                        caches.open(CACHE_NAME).then(function (c) {
+                            c.put(req, copy);
+                        });
+                    }
+                    return res;
+                })
+                .catch(function () {
+                    return caches.match(req).then(function (cached) {
+                        return cached || caches.match("./index.html");
+                    });
+                })
+        );
+        return;
+    }
 
     event.respondWith(
         fetch(req)
