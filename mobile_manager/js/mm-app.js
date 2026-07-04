@@ -10,7 +10,8 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
             getDoc,
             getDocFromServer
         } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.18.2";
+        import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+        import { mmPrintTodaySummary } from "./mm-pdf-report.js?v=2.18.4";
         import {
             mmSnapSave,
             mmSnapSaveDebounced,
@@ -18,7 +19,7 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
             mmSnapLoadBundle,
             mmSnapLoadHubBundle,
             mmSnapDetailType
-        } from "./mm-snapshot-store.js?v=2.18.2";
+        } from "./mm-snapshot-store.js?v=2.18.4";
 
         const firebaseConfig = window.POS_FIREBASE_CONFIG || {};
         if (!firebaseConfig.apiKey) {
@@ -30,6 +31,7 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         setPersistence(auth, browserLocalPersistence).catch(function () {});
+        const storage = getStorage(app);
         let db;
         try {
             db = initializeFirestore(app, {
@@ -691,6 +693,7 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
         let unsubInventory = null;
         let unsubDebt = null;
         let mmBackupItems = [];
+        let unsubBackup = null;
         let activeChannelId = "";
         let refreshBusy = false;
         let mmSnapDashboard = null;
@@ -721,7 +724,6 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
 
         function switchMobileTab(tab) {
             let t = tab === "backup" ? "backup" : tab === "debt" ? "debt" : tab === "inv" ? "inv" : tab === "dash" ? "dash" : "home";
-            if (t === "backup" && mmIsCloudApp()) t = "home";
             if (panelHome) panelHome.classList.toggle("hidden", t !== "home");
             if (panelDash) panelDash.classList.toggle("hidden", t !== "dash");
             if (panelInv) panelInv.classList.toggle("hidden", t !== "inv");
@@ -752,72 +754,6 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
             } catch (e) { return "—"; }
         }
 
-        function mmIsGithubPages() {
-            return /\.github\.io$/i.test(location.hostname || "");
-        }
-
-        /** Cloud/PWA app — Firebase only; no LAN IP or backup PIN. */
-        function mmIsCloudApp() {
-            if (mmIsGithubPages()) return true;
-            try {
-                return !guessPosApiBase();
-            } catch (e) {
-                return true;
-            }
-        }
-
-        function mmApplyCloudOnlyUi() {
-            if (!mmIsCloudApp()) return;
-            ["homeGoBackup", "panelBackup"].forEach(function (id) {
-                const el = document.getElementById(id);
-                if (el) el.classList.add("hidden");
-            });
-            try {
-                if (localStorage.getItem("pos_mobile_tab") === "backup") {
-                    localStorage.setItem("pos_mobile_tab", "home");
-                }
-            } catch (e) {}
-        }
-        mmApplyCloudOnlyUi();
-
-        function guessPosApiBase() {
-            if (mmIsGithubPages()) return "";
-            try {
-                const p = location.pathname || "";
-                const idx = p.toLowerCase().indexOf("/public/mobile_manager");
-                if (idx >= 0) return (location.origin + p.substring(0, idx)).replace(/\/$/, "");
-                const idx2 = p.toLowerCase().indexOf("/mobile_app_github");
-                if (idx2 >= 0) return "";
-            } catch (e) {}
-            return (location.origin + "/pos").replace(/\/$/, "");
-        }
-
-        function getMmPosBase() {
-            const el = document.getElementById("mmPosUrl");
-            let v = el && el.value ? String(el.value).trim() : "";
-            if (!v) { try { v = localStorage.getItem("mm_pos_url") || ""; } catch (e) {} }
-            if (!v) v = guessPosApiBase();
-            return v.replace(/\/$/, "");
-        }
-
-        function getMmBackupPin() {
-            const el = document.getElementById("mmBackupPin");
-            let v = el && el.value ? String(el.value).trim() : "";
-            if (!v) { try { v = localStorage.getItem("mm_backup_pin") || ""; } catch (e) {} }
-            return v.replace(/\D/g, "");
-        }
-
-        let mmPosBaseCached = "";
-        let mmPinCached = "";
-
-        function mmIsMixedLanBlocked(posBase) {
-            try {
-                const pos = new URL(posBase);
-                if (pos.protocol === "http:" && location.protocol === "https:") return true;
-            } catch (e) {}
-            return false;
-        }
-
         function mmIsIos() {
             return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                 (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -828,25 +764,23 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
                 (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
         }
 
-        function mmBackupFetchList(posBase, pin) {
-            const fd = new FormData();
-            fd.append("action", "mobile_list_backups");
-            fd.append("pin", pin);
-            return fetch(posBase + "/", { method: "POST", body: fd, credentials: "omit" });
-        }
-        function mmBackupFetchDownload(posBase, pin, name) {
-            const fd = new FormData();
-            fd.append("action", "mobile_download_backup");
-            fd.append("pin", pin);
-            fd.append("name", name);
-            return fetch(posBase + "/", { method: "POST", body: fd, credentials: "omit" });
-        }
-
         function mmBackupDlLabel() {
             return mmIsIosStandalone() ? '<i class="fas fa-share-square"></i> Save' : '<i class="fas fa-download"></i> داونلۆد';
         }
 
-        function mmDownloadBackupFile(posBase, pin, fileName, btn) {
+        function mmFormatBackupUploadedAt(item) {
+            const ms = item && (item.uploadedAt || item.mtime);
+            if (!ms) return "—";
+            try {
+                return new Date(Number(ms)).toLocaleString("ar-IQ", {
+                    year: "numeric", month: "short", day: "numeric",
+                    hour: "2-digit", minute: "2-digit", hour12: false
+                });
+            } catch (e) { return "—"; }
+        }
+
+        function mmDownloadCloudBackup(item, btn) {
+            if (!item || !item.name || !activeChannelId) return;
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -856,12 +790,15 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
                 btn.disabled = false;
                 btn.innerHTML = mmBackupDlLabel();
             };
-            mmBackupFetchDownload(posBase, pin, fileName)
+            const path = item.path || ("pos_mobile_backups/" + activeChannelId + "/" + item.name);
+            getDownloadURL(storageRef(storage, path))
+                .then(function (url) { return fetch(url); })
                 .then(function (res) {
                     if (!res.ok) throw new Error("HTTP " + res.status);
                     return res.blob();
                 })
                 .then(function (blob) {
+                    const fileName = item.name || "backup.zip";
                     const file = new File([blob], fileName, { type: blob.type || "application/zip" });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         return navigator.share({ files: [file], title: fileName });
@@ -881,140 +818,60 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
                 });
         }
 
-        function mmBindBackupDownload(btn, posBase, pin, fileName) {
-            btn.addEventListener("click", function (e) {
-                e.preventDefault();
-                mmDownloadBackupFile(posBase, pin, fileName, btn);
-            });
-        }
-
-        function buildMmBackupPageUrl(posBase, auto) {
-            const u = new URL("backup.html", window.location.href);
-            u.searchParams.set("pos", String(posBase || "").replace(/\/$/, ""));
-            if (auto) u.searchParams.set("auto", "1");
-            return u.toString();
-        }
-
-        function openPosBackupPage(auto) {
-            const posBase = getMmPosBase();
-            const pin = getMmBackupPin();
-            if (!pin || pin.length < 4) {
-                alert("PIN بنووسە (2026 یان لە POS)");
-                return;
-            }
-            if (/localhost|127\.0\.0\.1/i.test(posBase)) {
-                alert("IPـی WiFiـی لاپتۆپ بنووسە — localhost لە موبایل کار ناکات");
-                return;
-            }
-            try {
-                localStorage.setItem("mm_pos_url", posBase);
-                localStorage.setItem("mm_backup_pin", pin);
-            } catch (e) {}
-            window.location.href = buildMmBackupPageUrl(posBase, auto);
-        }
-
-        function renderBackupList(items) {
+        function renderCloudBackupList(items) {
             const box = document.getElementById("backupContent");
             if (!box) return;
-            if (!items || !items.length) {
-                box.innerHTML = '<div class="detail-empty">پاشەکەوت نییە.<br><small>لە POS: بەڕێوەبردنی داتابەیس → پاشەکەوتکردن</small></div>';
+            mmBackupItems = items || [];
+            if (!mmBackupItems.length) {
+                box.innerHTML = '<div class="detail-empty">پاشەکەوت لە Cloud نییە.<br><small>لە POS: بەڕێوەبردنی داتابەیس → پاشەکەوتکردن (ZIP)<br>Firebase sync پێویستە · بێ IP · بێ PIN</small></div>';
                 return;
             }
-            mmBackupItems = items;
-            box.innerHTML = items.map(function (it, idx) {
+            box.innerHTML = mmBackupItems.map(function (it, idx) {
                 const name = esc(it.name || "backup.zip");
-                const sub = (it.mtime_iso || formatBackupDate(it.mtime)) + " · " + formatBackupBytes(it.bytes);
+                const sub = mmFormatBackupUploadedAt(it) + " · " + formatBackupBytes(it.bytes);
                 return '<div class="backup-row">' +
                     '<div class="backup-row-meta"><div class="backup-row-name">' + name + '</div><div class="backup-row-sub">' + sub + '</div></div>' +
-                    '<button type="button" class="backup-dl-btn" data-backup-idx="' + idx + '">' + mmBackupDlLabel() + '</button>' +
+                    '<button type="button" class="backup-dl-btn" data-cloud-backup-idx="' + idx + '">' + mmBackupDlLabel() + '</button>' +
                     '</div>';
             }).join("");
-            box.querySelectorAll(".backup-dl-btn").forEach(function (btn) {
-                const i = parseInt(btn.getAttribute("data-backup-idx"), 10);
+            box.querySelectorAll("[data-cloud-backup-idx]").forEach(function (btn) {
+                const i = parseInt(btn.getAttribute("data-cloud-backup-idx"), 10);
                 const it = mmBackupItems[i];
-                if (!it || !it.name) return;
-                mmBindBackupDownload(btn, mmPosBaseCached, mmPinCached, it.name || "backup.zip");
-            });
-        }
-
-        function loadLanBackups() {
-            const posBase = getMmPosBase();
-            const pin = getMmBackupPin();
-            const box = document.getElementById("backupContent");
-            if (!pin || pin.length < 4) {
-                alert("PIN لە POS بنووسە: ڕێکخستن → پێشکەوتوو → بەڕێوەبردنی داتابەیس");
-                return;
-            }
-            if (/localhost|127\.0\.0\.1/i.test(posBase)) {
-                if (box) box.innerHTML = '<div class="detail-empty" style="color:#fca5a5;">localhost لە موبایل کار ناکات.<br><small>IPـی WiFiـی لاپتۆپ بنووسە، وەک: http://192.168.1.5/pos</small></div>';
-                return;
-            }
-            if (mmIsMixedLanBlocked(posBase)) {
-                if (box) box.innerHTML = '<div class="detail-empty" style="color:#fcd34d;">github.io (HTTPS) ناتوانێت بە POS (HTTP) پەیوەند بکات.<br><small>«کردنەوە لە Safari» بگرە ↓</small></div>';
-                return;
-            }
-            mmPosBaseCached = posBase;
-            mmPinCached = pin;
-            try {
-                localStorage.setItem("mm_pos_url", posBase);
-                localStorage.setItem("mm_backup_pin", pin);
-            } catch (e) {}
-            if (box) box.innerHTML = '<div class="detail-empty"><i class="fas fa-spinner fa-spin"></i></div>';
-            mmBackupFetchList(posBase, pin)
-                .then(function (res) {
-                    return res.json().then(function (data) {
-                        if (!res.ok || data.status !== "success") {
-                            throw new Error(data.message || ("HTTP " + res.status));
-                        }
-                        return data;
-                    });
-                })
-                .then(function (data) {
-                    renderBackupList(data.backups || []);
-                })
-                .catch(function (err) {
-                    let msg = String(err.message || err);
-                    if (/failed to fetch|network|load/i.test(msg)) {
-                        msg = "پەیوەندی بە POS نەکرا — WiFi، IP، XAMPP بپشکنە";
-                    } else if (/PIN|403|نادروست/i.test(msg)) {
-                        msg = "PIN نادروستە — لە POS: بەڕێوەبردنی داتابەیس (یان settingsPin: 2026)";
-                    }
-                    if (box) box.innerHTML = '<div class="detail-empty" style="color:#fca5a5;">' + esc(msg) + '</div>';
+                if (!it) return;
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    mmDownloadCloudBackup(it, btn);
                 });
-        }
-
-        function initMobileBackupUi() {
-            if (mmIsCloudApp()) return;
-            const urlEl = document.getElementById("mmPosUrl");
-            const pinEl = document.getElementById("mmBackupPin");
-            const btn = document.getElementById("mmLoadBackupsBtn");
-            const safariBtn = document.getElementById("mmOpenSafariBackupBtn");
-            const qs = new URLSearchParams(location.search);
-            if (urlEl && !urlEl.value) {
-                const fromQs = qs.get("mm_pos") || qs.get("pos") || "";
-                try { urlEl.value = fromQs || localStorage.getItem("mm_pos_url") || guessPosApiBase(); } catch (e) { urlEl.value = fromQs || guessPosApiBase(); }
-            }
-            if (pinEl && !pinEl.value) {
-                const fromQs = qs.get("mm_pin") || qs.get("pin") || "";
-                try { pinEl.value = fromQs || localStorage.getItem("mm_backup_pin") || ""; } catch (e) { pinEl.value = fromQs || ""; }
-            }
-            if (btn && !btn.__mmBound) {
-                btn.__mmBound = true;
-                btn.addEventListener("click", loadLanBackups);
-            }
-            if (safariBtn && !safariBtn.__mmBound) {
-                safariBtn.__mmBound = true;
-                safariBtn.addEventListener("click", function () { openPosBackupPage(true); });
-            }
-            if (qs.get("mm_auto") === "1" || location.hash === "#backup") {
-                setTimeout(function () {
-                    if (getMmBackupPin().length >= 4) loadLanBackups();
-                }, 400);
-            }
+            });
         }
 
         function bindBackups(channelId) {
-            initMobileBackupUi();
+            if (unsubBackup) {
+                unsubBackup();
+                unsubBackup = null;
+            }
+            if (!channelId) return;
+            const metaRef = doc(db, "pos_mobile_backups", channelId);
+            unsubBackup = onSnapshot(metaRef, function (snap) {
+                const data = snap.exists() ? snap.data() : null;
+                renderCloudBackupList(data && data.items ? data.items : []);
+            }, function () {
+                renderCloudBackupList([]);
+            });
+            const refreshBtn = document.getElementById("mmRefreshCloudBackupsBtn");
+            if (refreshBtn && !refreshBtn.__mmBound) {
+                refreshBtn.__mmBound = true;
+                refreshBtn.addEventListener("click", function () {
+                    const box = document.getElementById("backupContent");
+                    if (box) box.innerHTML = '<div class="detail-empty"><i class="fas fa-spinner fa-spin"></i></div>';
+                    getDocFromServer(metaRef).then(function (snap) {
+                        const data = snap.exists() ? snap.data() : null;
+                        renderCloudBackupList(data && data.items ? data.items : []);
+                    }).catch(function () {
+                        renderCloudBackupList(mmBackupItems);
+                    });
+                });
+            }
         }
 
         function updateHomeSyncText(text) {
@@ -2804,6 +2661,7 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
                 if (unsubDetail) { unsubDetail(); unsubDetail = null; }
                 if (unsubInventory) { unsubInventory(); unsubInventory = null; }
                 if (unsubDebt) { unsubDebt(); unsubDebt = null; }
+                if (unsubBackup) { unsubBackup(); unsubBackup = null; }
                 if (panelBackup) panelBackup.classList.add("hidden");
                 const detailCard = document.getElementById("detailCard");
                 if (detailCard) detailCard.classList.add("hidden");
@@ -2825,12 +2683,15 @@ import { initializeApp, getApp } from "https://www.gstatic.com/firebasejs/10.12.
             if (homeEmail) homeEmail.textContent = user.email;
             const savedTab = (function () {
                 try {
-                    const v = localStorage.getItem("pos_mobile_tab") || "home";
-                    if (v === "backup" && mmIsCloudApp()) return "home";
-                    return v;
+                    return localStorage.getItem("pos_mobile_tab") || "home";
                 } catch (e) { return "home"; }
             })();
-            switchMobileTab(savedTab === "debt" ? "debt" : savedTab === "inv" ? "inv" : savedTab === "dash" ? "dash" : "home");
+            switchMobileTab(
+                savedTab === "backup" ? "backup" :
+                savedTab === "debt" ? "debt" :
+                savedTab === "inv" ? "inv" :
+                savedTab === "dash" ? "dash" : "home"
+            );
             const channelId = user.email.toLowerCase();
             activeChannelId = channelId;
             mmLoadCachedBusinessMeta(channelId);
